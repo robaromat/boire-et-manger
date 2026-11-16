@@ -1,0 +1,50 @@
+/* Palette « carnet de marché » validée sur maquette v1 (maquettes/maquette-v1.html). Clair/sombre automatique. */
+:root {
+  --bg: #f2eee3;
+  --card: #fbf9f3;
+  --ink: #1d2620;
+  --muted: #687064;
+  --line: #ddd6c4;
+  --accent: #2c6a49;
+  --accent-ink: #ffffff;
+  --accent-soft: #dfeadf;
+  --danger: #b2412e;
+
+  /* Une couleur par rayon */
+  --r-fl: #3f8a3a;
+  --r-boul: #b07a2a;
+  --r-vrac: #9a6a3c;
+  --r-cre: #3f7fb5;
+  --r-trait: #b5483f;
+  --r-boi: #2a8c8c;
+  --r-surg: #5aa0c8;
+  --r-hyg: #8a5aa8;
+  --r-div: #8b8a80;
+
+  --f-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --f-ui: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151815;
+    --card: #1e221e;
+    --ink: #ebe7dc;
+    --muted: #9b9e92;
+    --line: #323830;
+    --accent: #74c595;
+    --accent-ink: #0d1a12;
+    --accent-soft: #23362a;
+    --danger: #e57a66;
+
+    --r-fl: #7cc46f;
+    --r-boul: #dcaa55;
+    --r-vrac: #c99a6a;
+    --r-cre: #77afe0;
+    --r-trait: #e5796e;
+    --r-boi: #5cc2c0;
+    --r-surg: #8cc8ea;
+    --r-hyg: #b98ad6;
+    --r-div: #a3a296;
+  }
+}
