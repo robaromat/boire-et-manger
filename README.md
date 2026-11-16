@@ -19,9 +19,9 @@ Application web personnelle de listes de courses : une liste par magasin, articl
 maquettes/                     prototype cliquable validé (données d'exemple)
 public/                        icônes, manifeste
 src/
-  model/       types de data.json, rayons, lecture et fusion des quantités
+  model/       types de data.json, dictionnaire des rayons, opérations sur les listes, quantités
   styles/      palette « carnet de marché » (thème clair/sombre automatique)
-  screens/     écrans (à venir)
+  screens/     écrans (listes, fiche article, réglages, connexion)
   sync/        API GitHub, fusion des conflits, cache IndexedDB, file hors ligne (à venir, repris de Culture)
   recipe/      lecture de recette via OpenAI (à venir)
 ```
@@ -39,7 +39,7 @@ npm run build     # vérification des types + build dans dist/
 
 1. ✅ Projet initialisé, déploiement automatique, dépôt de données créé
 2. ✅ Réglages + stockage GitHub + cache local (moteur repris de Culture)
-3. Listes, rayons, panier, saisie rapide, historique et habituels
+3. ✅ Listes, rayons, panier, saisie rapide, historique et habituels
 4. Recette en photo (OpenAI) et écran de revue
 5. PWA hors connexion
 6. Finitions et tests sur téléphone

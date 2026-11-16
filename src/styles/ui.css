@@ -83,7 +83,3 @@
 .ord-row i { width: 10px; height: 10px; border-radius: 3px; background: var(--rc); flex: none; }
 .ord-row span { flex: 1; font-weight: 500; }
 
-/* Aperçu provisoire des listes (étape 2) */
-.lists-preview { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.lists-preview li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
-.lname { font-family: var(--f-display); font-weight: 600; font-size: 18px; }

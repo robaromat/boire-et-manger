@@ -81,3 +81,15 @@ export const parseEntries = (raw: string) =>
     .split(',')
     .map(parseEntry)
     .filter((e): e is NonNullable<typeof e> => e !== null);
+
+/** Lit le champ « Quantité » de la fiche article : « 2 », « 500 g », « 1,5 kg + 2 », « 3 gousses », « un peu ». */
+export function parseQtyText(text: string): QtyPart[] {
+  return text
+    .split('+')
+    .map((x) => x.trim().replace(/^[×x]\s*(?=\d)/i, ''))
+    .filter(Boolean)
+    .map((x) => {
+      const m = x.match(new RegExp(String.raw`^${NUM}\s*(.*)$`));
+      return m ? makePart(toNumber(m[1]!), m[2]!.trim() || null) : { n: null, u: x };
+    });
+}
