@@ -38,7 +38,7 @@ npm run build     # vérification des types + build dans dist/
 ## Avancement
 
 1. ✅ Projet initialisé, déploiement automatique, dépôt de données créé
-2. Réglages + stockage GitHub + cache local (moteur repris de Culture)
+2. ✅ Réglages + stockage GitHub + cache local (moteur repris de Culture)
 3. Listes, rayons, panier, saisie rapide, historique et habituels
 4. Recette en photo (OpenAI) et écran de revue
 5. PWA hors connexion

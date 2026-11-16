@@ -1,20 +1,22 @@
-import './app.css';
+import { useEffect } from 'preact/hooks';
+import './styles/ui.css';
+import { route } from './router';
+import { isConfigured } from './settings/settings';
+import { engine, installSyncTriggers, startSync } from './sync/store';
+import { Setup } from './screens/Setup';
+import { SettingsScreen } from './screens/Settings';
+import { Lists } from './screens/Lists';
 
-// Étape 1 du plan : une page en ligne, sans données. Les écrans validés en maquette arrivent aux étapes suivantes.
 export function App() {
-  return (
-    <main class="welcome">
-      <div class="welcome-in">
-        <h1 class="wordmark">Courses</h1>
-        <p class="intro">
-          Tes listes de courses par magasin, rangées par rayon, avec la lecture des recettes en photo.
-        </p>
-        <p class="status">
-          <span class="dot" aria-hidden="true" />
-          En construction · l'app arrive bientôt ici
-        </p>
-        <p class="version">v{__APP_VERSION__}</p>
-      </div>
-    </main>
-  );
+  const configured = isConfigured.value;
+
+  useEffect(() => {
+    installSyncTriggers();
+    if (configured && !engine.value) void startSync();
+  }, [configured]);
+
+  // Sans réglages, le site public ne montre que l'écran de connexion.
+  if (!configured) return <div class="app"><Setup /></div>;
+
+  return <div class="app">{route.value.name === 'settings' ? <SettingsScreen /> : <Lists />}</div>;
 }
