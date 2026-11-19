@@ -15,10 +15,15 @@ export function normalizeName(s: string): string {
     .join(' ');
 }
 
+const UNIT_ALIASES: Record<string, string> = {
+  gr: 'g', gramme: 'g', grammes: 'g', kilo: 'kg', kilos: 'kg', kilogramme: 'kg', kilogrammes: 'kg',
+  litre: 'l', litres: 'l', centilitre: 'cl', centilitres: 'cl', millilitre: 'ml', millilitres: 'ml',
+};
+
 /** Convertit vers l'unité de stockage : kg → g, L et cl → ml. */
 export function makePart(n: number, unit?: string | null): QtyPart {
   const u = (unit ?? '').trim();
-  switch (u.toLowerCase()) {
+  switch (UNIT_ALIASES[u.toLowerCase()] ?? u.toLowerCase()) {
     case 'kg':
       return { n: n * 1000, u: 'g' };
     case 'g':

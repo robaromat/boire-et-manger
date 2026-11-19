@@ -123,3 +123,42 @@
 .switch input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
 .confirm { display: grid; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--danger); }
 .confirm p { margin: 0; }
+
+/* Recette en photo */
+.main-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.main-wrap .shop-main { padding-bottom: 90px; }
+.fab {
+  position: absolute; right: max(14px, env(safe-area-inset-right, 0px)); bottom: 14px; height: 54px; padding: 0 18px 0 16px;
+  border-radius: 18px; background: var(--ink); color: var(--bg); display: flex; align-items: center; gap: 8px; font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22); z-index: 2;
+}
+.sheet.full { max-height: 100dvh; height: 100dvh; border-radius: 0; align-content: start; padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
+.photo-opts { display: grid; gap: 10px; }
+.photo-opt {
+  display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 16px; border: 1px solid var(--line);
+  background: var(--bg); text-align: left; font-size: 17px; font-weight: 600; cursor: pointer;
+}
+.photo-opt small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.photo-opt .i { width: 28px; height: 28px; color: var(--accent); }
+.note { font-size: 13px; color: var(--muted); line-height: 1.45; margin: 0; }
+.loading { display: grid; place-items: center; gap: 16px; text-align: center; padding: 40px 0; }
+.loading img { max-width: 70%; max-height: 240px; border-radius: 12px; object-fit: cover; }
+.spinner { width: 36px; height: 36px; border-radius: 50%; border: 3.5px solid var(--line); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.portions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
+.portions small { display: block; color: var(--muted); font-size: 13px; }
+.stepper { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; }
+.stepper button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); font-size: 20px; line-height: 1; }
+.ings { display: grid; }
+.ing { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.ing input { width: 24px; height: 24px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+.ing .t { flex: 1; min-width: 0; }
+.ing .t b { font-weight: 600; font-size: 17px; }
+.ing .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 3px; font-size: 13px; color: var(--muted); align-items: center; }
+.ing .tag { display: inline-flex; align-items: center; gap: 5px; }
+.ing .tag i { width: 8px; height: 8px; border-radius: 2px; background: var(--rc); }
+.ing .merge { color: var(--accent); font-weight: 600; }
+.ing .staple { font-style: italic; }
+.ing .q { flex: none; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ing.off .t b, .ing.off .q { color: var(--muted); }
+.select { height: 48px; width: 100%; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); padding: 0 12px; font-size: 16px; }

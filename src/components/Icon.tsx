@@ -12,6 +12,7 @@ const PATHS = {
   download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/>',
   logout: '<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10"/>',
   refresh: '<path d="M20 11.5A8 8 0 1 1 17.7 6M20 4v5h-5"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/>',
   cart: '<path d="M4 9h16l-2.2 10.2a2 2 0 0 1-2 1.6H8.2a2 2 0 0 1-2-1.6z"/><path d="M8.5 9l3-5M15.5 9l-3-5"/>',
 } as const;
 
