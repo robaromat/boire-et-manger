@@ -27,12 +27,13 @@ Chaque carnet est utilisable dès sa livraison. Une maquette cliquable est valid
 chaque carnet.
 
 ### Phase 0 — Passage à Boire & Manger
-- Maquette de la coque (4 onglets, accueil de chaque carnet, tuto) ← **en cours**.
+- ✅ Maquette de la coque validée le 19/11/2026 (https://claude.ai/artifact/Ji5NLeyeSvYSXSKyNRRqEQ).
 - Renommer les dépôts : `courses` → `boire-et-manger`, `courses-data` → `boire-et-manger-data`
   (le jeton fine-grained de Robin suit le renommage). Nouvelle adresse
   robaromat.github.io/boire-et-manger/ ; l'ancienne adresse /courses/ redirige.
 - `data.json` → `courses.json` (migration automatique, rien à ressaisir).
-- Moteur de synchro multi-fichiers, magasin de photos (envoi, cache, vignettes).
+- Un moteur de synchro par fichier (chaque carnet aura le sien). Le magasin de photos (envoi, cache, vignettes)
+  arrive avec le premier carnet qui en a besoin (phase 2).
 - Coque : barre d'onglets, règle des 24 h, Réglages communs, moteur du tuto.
 - Manifeste « Boire & Manger » / « B&M », icônes.
 

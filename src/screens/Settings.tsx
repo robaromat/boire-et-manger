@@ -1,7 +1,9 @@
 import { useState } from 'preact/hooks';
 import { Icon } from '../components/Icon';
 import { SyncBadge } from '../components/SyncBadge';
-import { back } from '../router';
+import { TABS, TAB_LABELS, back, lastTab, navigate } from '../router';
+import { replayTuto, resetTuto } from '../tuto/state';
+import { stepsOf } from '../tuto/tuto';
 import { clearSettings, maskSecret, repoRef, settings, updateSettings } from '../settings/settings';
 import { testConnection, serialize } from '../sync/github';
 import { engine, mutate, resetLocal, startSync } from '../sync/store';
@@ -38,7 +40,7 @@ function GitHubSection() {
       setEditing(false);
       setToken('');
       setMsg({ ok: true, text: `Connexion OK : ${t.lists} liste${t.lists > 1 ? 's' : ''}, ${t.items} article${t.items > 1 ? 's' : ''}.` });
-    } else if (t.kind === 'no_file') setMsg({ ok: false, text: "Le dépôt est accessible mais n'a pas de data.json." });
+    } else if (t.kind === 'no_file') setMsg({ ok: false, text: "Le dépôt est accessible mais n'a pas de courses.json." });
     else setMsg({ ok: false, text: t.message });
   }
 
@@ -260,11 +262,49 @@ function DeviceSection() {
   );
 }
 
+function TutoSection() {
+  const withSteps = TABS.filter((t) => stepsOf(t).length > 0);
+  const [done, setDone] = useState(false);
+  return (
+    <section class="card">
+      <h2>
+        <Icon name="book" />
+        Tuto
+      </h2>
+      <p class="lead">Chaque carnet a une courte visite, proposée la première fois que tu l'ouvres.</p>
+      <div class="btnrow">
+        {withSteps.map((t) => (
+          <button
+            key={t}
+            class="btn"
+            onClick={() => {
+              navigate({ name: 'tab', tab: t }, { replace: true });
+              replayTuto(t);
+            }}
+          >
+            Revoir · {TAB_LABELS[t]}
+          </button>
+        ))}
+        <button
+          class="btn ghost"
+          onClick={() => {
+            resetTuto();
+            setDone(true);
+          }}
+        >
+          Tout reproposer
+        </button>
+      </div>
+      {done && <p class="testres ok">Chaque visite se rouvrira à ton prochain passage dans le carnet.</p>}
+    </section>
+  );
+}
+
 export function SettingsScreen() {
   return (
     <div class="screen">
       <header class="topbar">
-        <button class="iconbtn" aria-label="Retour aux listes" onClick={() => back({ name: 'lists' })}>
+        <button class="iconbtn" aria-label="Retour" onClick={() => back({ name: 'tab', tab: lastTab.value })}>
           <Icon name="back" />
         </button>
         <h1 class="title">Réglages</h1>
@@ -274,8 +314,9 @@ export function SettingsScreen() {
         <GitHubSection />
         <OpenAISection />
         <RayonsSection />
+        <TutoSection />
         <DeviceSection />
-        <p class="version">Courses v{__APP_VERSION__}</p>
+        <p class="version">Boire & Manger v{__APP_VERSION__}</p>
       </div>
     </div>
   );

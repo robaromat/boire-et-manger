@@ -4,9 +4,9 @@ import preact from '@preact/preset-vite';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 
-// L'app est servie par GitHub Pages sous https://robaromat.github.io/courses/
+// L'app est servie par GitHub Pages sous https://robaromat.github.io/boire-et-manger/
 export default defineConfig({
-  base: '/courses/',
+  base: '/boire-et-manger/',
   plugins: [preact()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),

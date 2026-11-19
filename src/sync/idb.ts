@@ -2,7 +2,7 @@
 // Si IndexedDB est indisponible (navigation privée stricte), on retombe sur la mémoire :
 // l'app marche, mais ne garde rien après fermeture.
 
-const DB = 'courses';
+const DB = 'courses'; // nom d'avant Boire & Manger, gardé pour ne pas perdre le cache
 const STORE = 'kv';
 const memory = new Map<string, unknown>();
 let dbPromise: Promise<IDBDatabase | null> | null = null;

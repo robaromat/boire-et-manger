@@ -37,7 +37,7 @@ export function Setup() {
     setBusy(true);
     const d = draft();
     try {
-      await writeDataFile(repoRef({ ...settings.value, ...d }), emptyDataFile(), null, 'Crée data.json');
+      await writeDataFile(repoRef({ ...settings.value, ...d }), emptyDataFile(), null, 'Crée courses.json');
       updateSettings(d);
       void startSync();
     } catch (err) {
@@ -50,8 +50,8 @@ export function Setup() {
   return (
     <div class="setup">
       <div class="setup-in">
-        <h1 class="wordmark">Courses</h1>
-        <p class="intro">Tes listes de courses par magasin, rangées par rayon, synchronisées entre ton téléphone et ton ordinateur.</p>
+        <h1 class="wordmark">Boire & Manger</h1>
+        <p class="intro">Tes courses, tes recettes, ta cave et tes souvenirs de table, synchronisés entre ton téléphone et ton ordinateur.</p>
         <form class="card" onSubmit={connect}>
           <h2>
             <Icon name="key" />
@@ -76,7 +76,7 @@ export function Setup() {
           {result?.kind === 'no_file' && (
             <div class="notice" role="alert">
               <span>
-                Le dépôt <b>{owner}/{repo}</b> est accessible, mais il n'a pas encore de fichier <span class="mono">data.json</span>.
+                Le dépôt <b>{owner}/{repo}</b> est accessible, mais il n'a pas encore de fichier <span class="mono">courses.json</span>.
               </span>
               <button type="button" class="btn small primary" disabled={busy} onClick={createFile}>
                 Créer le fichier
@@ -90,7 +90,7 @@ export function Setup() {
         <ol class="steps">
           <li>Sur github.com : Settings → Developer settings → Fine-grained tokens → Generate new token.</li>
           <li>
-            Accès au seul dépôt <b>{repo || 'courses-data'}</b>, permission <b>Contents : Read and write</b>, avec une date d'expiration.
+            Accès au seul dépôt <b>{repo || 'boire-et-manger-data'}</b>, permission <b>Contents : Read and write</b>, avec une date d'expiration.
           </li>
           <li>Colle le jeton ci-dessus. Il reste stocké sur cet appareil uniquement.</li>
         </ol>

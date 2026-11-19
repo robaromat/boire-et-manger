@@ -2,7 +2,7 @@ import type { DataFile } from '../model/types';
 import { base64ToUtf8, utf8ToBase64 } from '../lib/base64';
 import { parseDataFile } from '../model/validate';
 
-// Lecture / écriture de data.json dans le dépôt privé via l'API GitHub Contents.
+// Lecture / écriture d'un carnet (courses.json…) dans le dépôt privé via l'API GitHub Contents.
 // Chaque écriture envoie le sha de la version qu'on a lue : si quelqu'un (l'autre appareil) a écrit
 // entre-temps, GitHub refuse (409/422) et c'est au moteur de synchro de fusionner puis réessayer.
 
@@ -10,7 +10,7 @@ export interface RepoRef {
   token: string;
   owner: string;
   repo: string;
-  path?: string; // data.json par défaut
+  path?: string; // courses.json par défaut
 }
 
 export interface RemoteFile {
@@ -42,7 +42,10 @@ function headers(token: string): HeadersInit {
 }
 
 const contentsUrl = (r: RepoRef) =>
-  `${API}/repos/${encodeURIComponent(r.owner)}/${encodeURIComponent(r.repo)}/contents/${r.path ?? 'data.json'}`;
+  `${API}/repos/${encodeURIComponent(r.owner)}/${encodeURIComponent(r.repo)}/contents/${r.path ?? COURSES_FILE}`;
+
+/** Fichier du carnet Courses dans le dépôt de données (data.json avant le passage à Boire & Manger). */
+export const COURSES_FILE = 'courses.json';
 
 async function request(url: string, init: RequestInit): Promise<Response> {
   let res: Response;
@@ -89,14 +92,14 @@ export async function readDataFile(r: RepoRef): Promise<RemoteFile> {
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new GitHubError('invalid', "data.json n'est pas un JSON valide.");
+    throw new GitHubError('invalid', "courses.json n'est pas un JSON valide.");
   }
   const data = parseDataFile(parsed);
-  if (!data) throw new GitHubError('invalid', "data.json n'a pas le format attendu (schemaVersion 1, listes et historique).");
+  if (!data) throw new GitHubError('invalid', "courses.json n'a pas le format attendu (schemaVersion 1, listes et historique).");
   return { data, sha: body.sha };
 }
 
-/** Écrit data.json. `sha` = version lue précédemment (absent pour créer le fichier). Renvoie le nouveau sha. */
+/** Écrit le fichier. `sha` = version lue précédemment (absent pour créer le fichier). Renvoie le nouveau sha. */
 export async function writeDataFile(r: RepoRef, data: DataFile, sha: string | null, message: string): Promise<string> {
   const res = await request(contentsUrl(r), {
     method: 'PUT',
@@ -124,7 +127,7 @@ export type ConnectionTest =
   | { ok: false; kind: 'no_file' }
   | { ok: false; kind: GitHubErrorKind; message: string };
 
-/** Pour le bouton « Tester la connexion » : distingue « dépôt inaccessible » et « dépôt OK mais pas de data.json ». */
+/** Pour le bouton « Tester la connexion » : distingue « dépôt inaccessible » et « dépôt OK mais pas de courses.json ». */
 export async function testConnection(r: RepoRef): Promise<ConnectionTest> {
   try {
     const f = await readDataFile(r);

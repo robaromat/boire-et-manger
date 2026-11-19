@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import '../styles/lists.css';
 import { Icon } from '../components/Icon';
 import { Snack, showSnack } from '../components/Snack';
-import { SyncBadge } from '../components/SyncBadge';
+import { Topbar } from '../components/Topbar';
 import { classify } from '../model/dict';
 import {
   addEntries, createList, deleteList, finishShopping, habituels, moveItem, removeItem, renameList, suggestions,
@@ -91,7 +91,7 @@ export function Lists() {
   if (!d || !list) {
     return (
       <div class="shop">
-        <Topbar />
+        <Topbar title="Courses" />
         <div class="shop-main">
           {!d && !error && <p class="empty">Chargement des listes…</p>}
           {!d && error && (
@@ -161,7 +161,7 @@ export function Lists() {
 
   return (
     <div class="shop">
-      <Topbar />
+      <Topbar title="Courses" />
       <div class="tabs" role="tablist" aria-label="Magasins">
         {d.lists.map((l) => (
           <button
@@ -272,19 +272,6 @@ export function Lists() {
         />
       )}
     </div>
-  );
-}
-
-function Topbar() {
-  return (
-    <header class="topbar">
-      <div class="brand">
-        Courses <SyncBadge />
-      </div>
-      <button class="iconbtn" aria-label="Réglages" onClick={() => navigate({ name: 'settings' })}>
-        <Icon name="sliders" />
-      </button>
-    </header>
   );
 }
 

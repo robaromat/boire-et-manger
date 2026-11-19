@@ -1,6 +1,6 @@
 import { signal } from '@preact/signals';
 import { createSyncEngine, type PersistedState, type SyncEngine } from './engine';
-import { readDataFile, writeDataFile } from './github';
+import { COURSES_FILE, readDataFile, writeDataFile } from './github';
 import { idbClear, idbGet, idbSet } from './idb';
 import { repoRef, settings } from '../settings/settings';
 import type { DataFile } from '../model/types';
@@ -14,15 +14,28 @@ export const engine = signal<SyncEngine | null>(null);
 /** (Re)démarre la synchro avec les réglages actuels (au lancement, ou après changement de jeton/dépôt). */
 export function startSync(): Promise<void> {
   const ref = repoRef(settings.value);
-  const key = `${STATE_KEY}:${ref.owner}/${ref.repo}`;
+  const key = `${STATE_KEY}:${ref.owner}/${ref.repo}/${COURSES_FILE}`;
   const e = createSyncEngine({
     read: () => readDataFile(repoRef()),
     write: (d, sha, msg) => writeDataFile(repoRef(), d, sha, msg),
-    load: () => idbGet<PersistedState>(key),
+    load: () => loadState(key, ref.owner),
     save: (s) => idbSet(key, s),
   });
   engine.value = e;
   return e.init();
+}
+
+/**
+ * Cache local. Au premier lancement de Boire & Manger, reprend les modifications pas encore envoyées
+ * par l'ancienne app « Courses » (dépôt courses-data, fichier data.json) : elles seront fusionnées avec
+ * courses.json au premier envoi. Sans modification en attente, on repart simplement de GitHub.
+ */
+async function loadState(key: string, owner: string): Promise<PersistedState | undefined> {
+  const s = await idbGet<PersistedState>(key);
+  if (s) return s;
+  const legacy = await idbGet<PersistedState>(`${STATE_KEY}:${owner}/courses-data`);
+  if (legacy?.dirty && legacy.local) return { local: legacy.local, base: null, dirty: true, lastSyncAt: legacy.lastSyncAt };
+  return undefined;
 }
 
 /** Raccourci pour les écrans : modifier les données. */

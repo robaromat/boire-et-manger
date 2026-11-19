@@ -1,8 +1,7 @@
 /* Écran des listes, repris de la maquette validée (maquettes/maquette-v1.html). */
 
 .shop {
-  height: 100dvh; max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; position: relative;
-  padding-top: env(safe-area-inset-top, 0px);
+  flex: 1; min-height: 0; width: 100%; max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; position: relative;
 }
 .shop .topbar { position: static; border-bottom: 0; padding-bottom: 2px; }
 
@@ -91,7 +90,7 @@
 
 /* Message avec Annuler */
 .snack {
-  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(196px + env(safe-area-inset-bottom, 0px));
   width: min(calc(100% - 24px), 560px); background: var(--ink); color: var(--bg); border-radius: 14px; padding: 12px 14px;
   display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; z-index: 30;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);

@@ -2,7 +2,7 @@
   "name": "courses",
   "private": true,
   "version": "1.0.0",
-  "description": "Courses : mes listes de courses par magasin, rangées par rayon (PWA personnelle).",
+  "description": "Boire & Manger : courses, recettes, cave et souvenirs de table (PWA personnelle).",
   "type": "module",
   "scripts": {
     "dev": "vite",

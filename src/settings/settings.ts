@@ -13,15 +13,29 @@ export interface Settings {
 const DEFAULTS: Settings = {
   githubToken: '',
   owner: 'robaromat',
-  repo: 'courses-data',
+  repo: 'boire-et-manger-data',
   openaiKey: '',
 };
 
-const KEY = 'courses.settings.v1';
+const KEY = 'bm.settings.v1';
+const LEGACY_KEY = 'courses.settings.v1'; // app « Courses », avant Boire & Manger
+
+/** Réglages de l'ancienne app « Courses » → Boire & Manger : même jeton et même clé, dépôt renommé. */
+export function migrateLegacySettings(raw: Partial<Settings>): Partial<Settings> {
+  return raw.repo === 'courses-data' ? { ...raw, repo: 'boire-et-manger-data' } : raw;
+}
 
 function load(): Settings {
   try {
-    const raw = localStorage.getItem(KEY);
+    let raw = localStorage.getItem(KEY);
+    if (!raw) {
+      const legacy = localStorage.getItem(LEGACY_KEY);
+      if (legacy) {
+        raw = JSON.stringify(migrateLegacySettings(JSON.parse(legacy) as Partial<Settings>));
+        localStorage.setItem(KEY, raw);
+        localStorage.removeItem(LEGACY_KEY);
+      }
+    }
     if (!raw) return { ...DEFAULTS };
     return { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
   } catch {
@@ -48,6 +62,7 @@ export function updateSettings(patch: Partial<Settings>): void {
 export function clearSettings(): void {
   try {
     localStorage.removeItem(KEY);
+    localStorage.removeItem(LEGACY_KEY);
   } catch {
     /* rien à faire */
   }

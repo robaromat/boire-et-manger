@@ -10,6 +10,12 @@
   --accent-soft: #dfeadf;
   --danger: #b2412e;
 
+  /* Une couleur par carnet (l'accent suit l'onglet ouvert, voir shell.css) */
+  --a-courses: #2c6a49;
+  --a-recettes: #b0532b;
+  --a-cave: #7f2539;
+  --a-souvenirs: #3d5c7c;
+
   /* Une couleur par rayon */
   --r-fl: #3f8a3a;
   --r-boul: #b07a2a;
@@ -36,6 +42,11 @@
     --accent-ink: #0d1a12;
     --accent-soft: #23362a;
     --danger: #e57a66;
+
+    --a-courses: #74c595;
+    --a-recettes: #ec9468;
+    --a-cave: #e0798f;
+    --a-souvenirs: #8fb3d8;
 
     --r-fl: #7cc46f;
     --r-boul: #dcaa55;

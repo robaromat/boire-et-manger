@@ -5,7 +5,7 @@ import { isConfigured } from './settings/settings';
 import { engine, installSyncTriggers, startSync } from './sync/store';
 import { Setup } from './screens/Setup';
 import { SettingsScreen } from './screens/Settings';
-import { Lists } from './screens/Lists';
+import { Shell } from './screens/Shell';
 
 export function App() {
   const configured = isConfigured.value;
@@ -18,5 +18,6 @@ export function App() {
   // Sans réglages, le site public ne montre que l'écran de connexion.
   if (!configured) return <div class="app"><Setup /></div>;
 
-  return <div class="app">{route.value.name === 'settings' ? <SettingsScreen /> : <Lists />}</div>;
+  const r = route.value;
+  return <div class="app">{r.name === 'settings' ? <SettingsScreen /> : <Shell tab={r.tab} />}</div>;
 }

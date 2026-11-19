@@ -1,4 +1,4 @@
-// Modèle de data.json (dépôt privé courses-data), issu du cadrage du 2026-11-16 et de la maquette v1 :
+// Modèle de courses.json (dépôt privé boire-et-manger-data), issu du cadrage du 2026-11-16 et de la maquette v1 :
 // - listes étanches (une par magasin), articles rangés dans une liste de rayons commune ;
 // - un historique commun, indexé par nom normalisé, qui sert aux suggestions, aux habituels (fréquence par liste),
 //   au rayon appris et au drapeau « toujours à la maison ».

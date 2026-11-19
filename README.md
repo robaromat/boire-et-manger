@@ -1,13 +1,13 @@
-# Courses
+# Boire & Manger
 
-Application web personnelle de listes de courses : une liste par magasin, articles rangés par rayon, panier à cocher, et lecture d'une recette en photo pour ajouter ses ingrédients. Installable sur le téléphone (PWA), synchronisée entre appareils.
+Application web personnelle (« B&M » sur l'écran d'accueil) qui réunit quatre carnets : **Courses** (une liste par magasin, rangée par rayon), **Recettes**, **Cave** et **Souvenirs** de table. Installable sur le téléphone (PWA), synchronisée entre appareils. Plan détaillé : [PLAN-boire-et-manger.md](PLAN-boire-et-manger.md). Suite de l'app « Courses ».
 
-**En ligne :** https://robaromat.github.io/courses/
+**En ligne :** https://robaromat.github.io/boire-et-manger/ (l'ancienne adresse /courses/ y redirige)
 
 ## Principe
 
 - Site statique (Vite + TypeScript + Preact) publié sur GitHub Pages à chaque push sur `main`.
-- Les données vivent dans un **dépôt privé séparé** (`courses-data`, un seul fichier `data.json`), lu et écrit via l'API GitHub. Même moteur de synchro que l'app Culture.
+- Les données vivent dans un **dépôt privé séparé** (`boire-et-manger-data`, un fichier par carnet : `courses.json` pour l'instant), lu et écrit via l'API GitHub. Même moteur de synchro que l'app Culture.
 - Classement par rayon **local** : historique (rayons appris) puis dictionnaire d'aliments. Aucun appel réseau.
 - Lecture des recettes en photo par l'**API OpenAI**, appelée directement depuis le téléphone.
 - **Aucun secret dans ce dépôt.** Le jeton GitHub et la clé OpenAI sont saisis dans l'écran Réglages et restent dans le stockage local de chaque appareil.
@@ -30,7 +30,7 @@ src/
 
 ```bash
 npm install
-npm run dev       # http://localhost:5173/courses/
+npm run dev       # http://localhost:5173/boire-et-manger/
 npm test          # tests unitaires (vitest)
 npm run build     # vérification des types + build dans dist/
 ```
