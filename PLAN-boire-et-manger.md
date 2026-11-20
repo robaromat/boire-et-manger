@@ -59,7 +59,17 @@ chaque carnet.
 - « Ajouter aux courses » : écran de revue, articles marqués « pour : … », retrait d'une recette de la liste.
 - Export d'une recette en texte / PDF via Partager.
 
-### Phase 3 — Cave
+### Phase 3 — Cave ✅ (20/11/2026, v1.2.0)
+- ✅ Maquette validée le 20/11/2026 (https://claude.ai/artifact/2kqpfagEtrDCfcF43XBz1j), avec 8 raisons de sortie
+  demandées par Robin (bue, apportée et bue ailleurs, offerte, cuisine, bouchonnée/abîmée, cassée, disparue, vendue).
+- Livré : carnet `cave.json` (fusion vin par vin, stock fusionné par écarts : une bouteille sortie sur chaque
+  téléphone = deux en moins), À boire / Ma cave (plan ou liste) / Dégustés / Envies, fiche vin, « Sortir » + raison,
+  « Je l'ai bu » (note, commentaire, plat ou recette du carnet, lieu, photo), emplacements, fenêtre, ajout par photo
+  d'étiquette (ChatGPT, estimations marquées), « Compléter avec ChatGPT », import CellarTracker (Inventory, Consumed,
+  Notes ; CSV UTF-8 ou Latin-1 ; lieux renommables ; réimport sans doublon), tuto Cave, Fold côte à côte.
+- Correction commune : un panneau ouvert juste après en avoir fermé un (« ⋯ » puis « Modifier ») ne fait plus quitter
+  la fiche quand on le ferme (Recettes et Cave).
+- À vérifier avec les vrais exports CellarTracker : noms de colonnes et format des dates (mois/jour détecté).
 - Fiche par vin (domaine, cuvée, millésime) : stock, lieu + clayette, prix d'achat, fenêtre de dégustation,
   journal « Je l'ai bu » (date, note, commentaire, plat / recette, photo). Ouvrir une bouteille = stock −1 + entrée.
 - Ajout par photo d'étiquette ; fiche enrichie par ChatGPT (région, cépages, style, fenêtre estimée, accords

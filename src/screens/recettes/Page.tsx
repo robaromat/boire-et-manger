@@ -504,7 +504,7 @@ function CoursesSheet({ r, portions, onClose }: { r: Recipe; portions: number; o
   );
 }
 
-function Viewer({ photo, onClose }: { photo: string; onClose: () => void }) {
+export function Viewer({ photo, onClose }: { photo: string; onClose: () => void }) {
   const url = usePhoto(photo, 'full');
   return (
     <Sheet onClose={onClose} label="Photo" full cls="viewer">

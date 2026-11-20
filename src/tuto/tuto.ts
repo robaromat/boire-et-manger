@@ -75,6 +75,27 @@ export const TUTO_STEPS: TutoStep[] = [
     title: 'Cuisiner, puis noter',
     text: "Sur une fiche : les portions recalculent tout, jusque dans les étapes. « Mode cuisine » garde l'écran allumé en grand ; « Aux courses » envoie les ingrédients dans une liste ; « Je l'ai fait » ajoute une note, un commentaire et une photo au journal.",
   },
+  {
+    id: 'cave.boire',
+    tab: 'cave',
+    since: '2026-11-20T18:00',
+    title: 'Ta cave, à boire d’abord',
+    text: "« À boire » classe tes bouteilles par année de fin de leur fenêtre de dégustation : en rouge, celles qui ont passé leur fenêtre. « Ma cave » dessine le plan de tes lieux et clayettes ; « Dégustés » garde tes notes, « Envies » les vins à acheter.",
+  },
+  {
+    id: 'cave.sortir',
+    tab: 'cave',
+    since: '2026-11-20T18:00',
+    title: 'Sortir une bouteille',
+    text: "Sur la fiche d'un vin, « Sortir » baisse le stock et demande pourquoi : bue (tu notes la dégustation, avec le plat ou une recette du carnet), offerte, pour la cuisine, bouchonnée, cassée, disparue ou vendue. Tout reste dans l'historique du vin.",
+  },
+  {
+    id: 'cave.ajout',
+    tab: 'cave',
+    since: '2026-11-20T18:00',
+    title: 'Ajouter un vin',
+    text: "« + Vin » lit la photo de l'étiquette : ChatGPT remplit la fiche et estime la fenêtre et les accords (marqués « estimation »). Tu choisis ensuite : en cave, dégusté ailleurs, ou une envie. Ta cave CellarTracker s'importe depuis « Ma cave ».",
+  },
 ];
 
 /** Étapes à montrer pour un onglet : jamais vues, ou vues avant leur dernière mise à jour. */

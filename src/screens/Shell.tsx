@@ -7,6 +7,7 @@ import { hasPending, maybeOpenTuto, tutoSeen } from '../tuto/state';
 import { TutoSheet } from '../tuto/TutoSheet';
 import { Lists } from './Lists';
 import { Recettes } from './recettes/Recettes';
+import { Cave } from './cave/Cave';
 import { applyUpdate, updateReady } from '../pwa';
 import { sharedLink } from '../share';
 
@@ -25,7 +26,7 @@ export function Shell({ tab, sub }: { tab: TabId; sub?: string }) {
   return (
     <div class="shell" data-tab={tab}>
       <div class="shell-body">
-        {tab === 'courses' ? <Lists /> : tab === 'recettes' ? <Recettes openId={sub} /> : <Soon tab={tab} />}
+        {tab === 'courses' ? <Lists /> : tab === 'recettes' ? <Recettes openId={sub} /> : tab === 'cave' ? <Cave openId={sub} /> : <Soon tab={tab} />}
       </div>
       <nav class="tabbar" aria-label="Carnets">
         {TABS.map((t) => (
@@ -52,17 +53,7 @@ export function Shell({ tab, sub }: { tab: TabId; sub?: string }) {
   );
 }
 
-const SOON: Record<'cave' | 'souvenirs', { phase: number; text: string; items: string[] }> = {
-  cave: {
-    phase: 3,
-    text: 'Ta cave et tes dégustations, pour remplacer CellarTracker et Vivino.',
-    items: [
-      '« À boire » classé par année',
-      'Plan de la cave, lieu par lieu et clayette par clayette',
-      'Ajout par photo de l’étiquette',
-      'Import de ton export CellarTracker',
-    ],
-  },
+const SOON: Record<'souvenirs', { phase: number; text: string; items: string[] }> = {
   souvenirs: {
     phase: 4,
     text: 'Tes restaurants, bars et adresses gourmandes, sur une carte et dans un livre de photos.',
@@ -70,7 +61,7 @@ const SOON: Record<'cave' | 'souvenirs', { phase: number; text: string; items: s
   },
 };
 
-function Soon({ tab }: { tab: 'cave' | 'souvenirs' }) {
+function Soon({ tab }: { tab: 'souvenirs' }) {
   const s = SOON[tab];
   return (
     <div class="shop">

@@ -1,0 +1,684 @@
+<meta charset="utf-8">
+<title>Boire & Manger · Cave</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Maquette du carnet Cave : un téléphone cliquable (écran extérieur du Fold) + colonne « à essayer ».
+   Palette « carnet de marché » de Boire & Manger ; accent bordeaux du carnet Cave. */
+:root {
+  --paper: #f2eee3; --card: #fbf9f3; --ink: #1d2620; --muted: #687064; --line: #ddd6c4;
+  --accent: #7f2539; --on-accent: #ffffff; --soft: #ecdcdc; --warn: #b5483f; --ok: #2c6a49; --shadow: 0 10px 40px rgba(40, 45, 30, .16);
+  --w-rouge: #7f2539; --w-blanc: #d4b54a; --w-rose: #e08a9a; --w-bulles: #b9c27a; --w-doux: #c98a2b;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #151815; --card: #1e221e; --ink: #ebe7dc; --muted: #9b9e92; --line: #323830;
+    --accent: #e0798f; --on-accent: #1d0a0f; --soft: #3a2328; --warn: #e5796e; --ok: #74c595; --shadow: 0 10px 40px rgba(0, 0, 0, .5);
+    --w-rouge: #c4475f; --w-blanc: #e6cf6e; --w-rose: #f0a7b5; --w-bulles: #cdd58e; --w-doux: #e2a54a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #151815; --card: #1e221e; --ink: #ebe7dc; --muted: #9b9e92; --line: #323830;
+  --accent: #e0798f; --on-accent: #1d0a0f; --soft: #3a2328; --warn: #e5796e; --ok: #74c595; --shadow: 0 10px 40px rgba(0, 0, 0, .5);
+  --w-rouge: #c4475f; --w-blanc: #e6cf6e; --w-rose: #f0a7b5; --w-bulles: #cdd58e; --w-doux: #e2a54a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+button:disabled { opacity: .45; cursor: default; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.stage { display: flex; gap: 40px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+.notes { max-width: 380px; min-width: 0; padding-top: 12px; display: grid; gap: 16px; }
+.notes h1 { font-family: var(--font-display); font-size: 30px; margin: 0; letter-spacing: -.01em; }
+.notes p { color: var(--muted); line-height: 1.5; margin: 0; }
+.notes ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.notes li { line-height: 1.45; padding-left: 14px; border-left: 2px solid var(--line); }
+.notes b { font-weight: 600; }
+
+.phone {
+  position: relative; width: min(100%, 392px); height: min(840px, calc(100dvh - 40px)); min-height: 640px;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 28px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+@media (max-width: 500px) {
+  body { padding-block: 0; padding-left: 0; padding-right: 0; }
+  .phone { width: 100%; border-radius: 0; border: 0; box-shadow: none; height: 100dvh; min-height: 0; }
+  .notes { padding: 0 max(16px, env(safe-area-inset-right, 0px)) 32px max(16px, env(safe-area-inset-left, 0px)); }
+}
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 12px 6px 16px; min-height: 60px; }
+.title { font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; margin: 0; }
+.title::before { content: ""; width: 10px; height: 22px; border-radius: 4px; background: var(--accent); }
+.sync { font-weight: 600; font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; }
+.sync::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.iconbtn { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; color: var(--muted); }
+.iconbtn:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--ink); }
+.main { position: relative; flex: 1; min-height: 0; }
+.scroll { position: absolute; inset: 0; overflow-y: auto; padding-bottom: 96px; }
+.nav { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--card); padding: 6px 4px 8px; }
+.nav button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; font-size: 12px; font-weight: 600; color: var(--muted); }
+.nav .pill { width: 54px; height: 30px; border-radius: 15px; display: grid; place-items: center; }
+.nav button[aria-current="page"] { color: var(--ink); }
+.nav button[aria-current="page"] .pill { background: var(--soft); color: var(--accent); }
+
+/* Vues et recherche */
+.seg { display: flex; gap: 2px; margin: 2px 12px 10px; padding: 3px; border-radius: 14px; background: color-mix(in srgb, var(--line) 70%, transparent); }
+.seg button { flex: 1; padding: 8px 2px; border-radius: 11px; font-size: 14px; font-weight: 700; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.searchrow { display: flex; gap: 8px; margin: 2px 12px 8px; }
+.search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 12px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); color: var(--muted); }
+.search input { flex: 1; min-width: 0; border: 0; background: none; font-size: 16px; outline: none; color: var(--ink); }
+.summary { padding: 4px 16px 0; font-size: 13px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+.summary b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 16px 16px 6px; }
+.sec-h h2 { margin: 0; font-family: var(--font-display); font-size: 19px; letter-spacing: -.01em; }
+.sec-h span { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sec-h.late h2 { color: var(--warn); }
+.meta { font-size: 13px; color: var(--muted); }
+.hint { font-size: 13px; color: var(--muted); padding: 0 16px; line-height: 1.45; }
+.stars { color: var(--accent); letter-spacing: 1px; font-size: 13px; white-space: nowrap; }
+.stars .off { color: var(--line); }
+.fab { position: absolute; right: 14px; bottom: 14px; height: 54px; padding: 0 18px 0 16px; border-radius: 18px; background: var(--ink); color: var(--paper); display: flex; align-items: center; gap: 8px; font-weight: 600; box-shadow: var(--shadow); z-index: 2; }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--soft); color: var(--accent); white-space: nowrap; }
+.tag.plain { background: var(--paper); color: var(--ink); border: 1px solid var(--line); font-weight: 600; }
+.tag.est { background: transparent; border: 1px dashed var(--muted); color: var(--muted); }
+.tag.late { background: color-mix(in srgb, var(--warn) 16%, var(--card)); color: var(--warn); }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--wc); flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+
+/* Ligne de vin */
+.wrow { display: flex; gap: 12px; align-items: center; padding: 11px 16px; text-align: left; width: 100%; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.wrow .bottle { width: 34px; height: 54px; flex: none; display: grid; place-items: end center; }
+.wrow .t { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.wrow b { font-size: 16px; font-weight: 600; line-height: 1.25; }
+.wrow .side { display: grid; justify-items: end; gap: 3px; flex: none; }
+.wrow .n { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 15px; }
+.wrow mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+
+/* Plan de la cave */
+.toggle { display: flex; gap: 6px; padding: 0 16px; }
+.toggle button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 600; }
+.toggle button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.place { margin: 12px 16px 0; border: 1px solid var(--line); border-radius: 18px; background: var(--card); padding: 12px; display: grid; gap: 8px; }
+.place h3 { margin: 0; font-family: var(--font-display); font-size: 18px; display: flex; justify-content: space-between; align-items: baseline; }
+.place h3 span { font-family: var(--font-body); font-size: 13px; color: var(--muted); font-weight: 600; }
+.shelf { display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 12px; background: var(--paper); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); text-align: left; width: 100%; }
+.shelf:hover { border-color: var(--accent); }
+.shelf .lbl { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+.shelf .bots { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.shelf .bots i { width: 14px; height: 14px; border-radius: 50%; background: var(--wc); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+.shelf .c { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 16px 0; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.banner { margin: 12px 16px 0; padding: 12px 14px; border-radius: 14px; border: 1px dashed var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--card)); display: grid; gap: 6px; text-align: left; width: calc(100% - 32px); }
+.banner b { font-size: 15px; }
+
+/* Dégustés */
+.tast { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); text-align: left; width: 100%; }
+.tast .ph { width: 52px; height: 52px; border-radius: 12px; background: var(--pc, var(--soft)); position: relative; overflow: hidden; }
+.tast .ph::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 60%); }
+.tast p { margin: 3px 0 0; line-height: 1.4; }
+.tast .pl { font-size: 13px; color: var(--muted); margin-top: 3px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+/* Fiche vin */
+.fiche-top { position: relative; height: 200px; background: linear-gradient(160deg, color-mix(in srgb, var(--wc) 55%, var(--paper)), color-mix(in srgb, var(--wc) 20%, var(--paper))); display: grid; place-items: center; }
+.label { width: 118px; height: 150px; border-radius: 6px; background: #f7f1e1; color: #3b2a1d; box-shadow: 0 6px 20px rgba(0,0,0,.25); display: grid; align-content: center; justify-items: center; gap: 6px; padding: 10px; text-align: center; font-family: var(--font-display); }
+.label small { font-family: var(--font-body); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; }
+.label b { font-size: 15px; line-height: 1.1; }
+.label i { font-style: normal; font-size: 22px; font-weight: 700; }
+.fiche-top .back, .fiche-top .more { position: absolute; top: 12px; width: 42px; height: 42px; border-radius: 50%; background: color-mix(in srgb, var(--card) 88%, transparent); display: grid; place-items: center; color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.fiche-top .back { left: 12px; } .fiche-top .more { right: 12px; }
+.fiche { padding: 14px 16px 28px; display: grid; gap: 16px; }
+.fiche h1 { margin: 0; font-family: var(--font-display); font-size: 25px; line-height: 1.15; letter-spacing: -.01em; text-wrap: balance; }
+.fiche .sub { margin: -10px 0 0; color: var(--muted); }
+.chipsline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.stock { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+.stock .big { font-family: var(--font-display); font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.stock .t { flex: 1; min-width: 0; }
+.btn { border-radius: 12px; padding: 12px 16px; font-weight: 600; background: var(--accent); color: var(--on-accent); text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.btn.small { padding: 7px 12px; font-size: 14px; }
+.btn.wide { width: 100%; font-size: 17px; padding: 14px; }
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.block h2 { margin: 0 0 8px; font-family: var(--font-display); font-size: 19px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 7px 16px; font-size: 15px; }
+.kv > span:nth-child(odd) { color: var(--muted); }
+.locs { display: grid; gap: 6px; }
+.loc { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); }
+.loc b { flex: 1; }
+.loc .n { font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Fenêtre de dégustation */
+.win { position: relative; height: 44px; margin-top: 4px; }
+.win .track { position: absolute; left: 0; right: 0; top: 12px; height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--line) 80%, transparent); }
+.win .band { position: absolute; top: 12px; height: 10px; border-radius: 5px; background: var(--accent); }
+.win .band.est { background: repeating-linear-gradient(45deg, var(--accent) 0 6px, color-mix(in srgb, var(--accent) 55%, var(--card)) 6px 12px); }
+.win .now { position: absolute; top: 4px; width: 2px; height: 26px; background: var(--ink); }
+.win .now::after { content: "2026"; position: absolute; top: -2px; left: 5px; font-size: 11px; font-weight: 700; }
+.win .ticks { position: absolute; left: 0; right: 0; top: 28px; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pairs { display: flex; flex-wrap: wrap; gap: 6px; }
+.pair { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 14px; font-weight: 600; }
+.pair .i { width: 16px; height: 16px; color: #b0532b; }
+.pair.gen { font-weight: 500; color: var(--muted); }
+.jentry { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+.jentry .ph { width: 46px; height: 46px; border-radius: 10px; background: var(--pc, var(--soft)); }
+.jentry p { margin: 2px 0 0; line-height: 1.4; }
+
+/* Feuilles */
+.overlay { position: absolute; inset: 0; background: rgba(15, 20, 15, .42); z-index: 20; display: flex; align-items: flex-end; }
+.sheet { width: 100%; max-height: 90%; overflow-y: auto; background: var(--card); border-radius: 22px 22px 0 0; padding: 10px 18px 20px; display: grid; gap: 14px; }
+.sheet.full { max-height: 100%; height: 100%; border-radius: 0; align-content: start; padding-top: 14px; }
+.grab { width: 40px; height: 4px; border-radius: 2px; background: var(--line); justify-self: center; }
+.sheet h2 { font-family: var(--font-display); font-size: 23px; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.sheet h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field label, .field .lab { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.field input, .field textarea, .field select { width: 100%; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); padding: 10px 12px; font-size: 16px; min-width: 0; }
+.field input, .field select { height: 46px; padding: 0 12px; }
+.field textarea { min-height: 76px; resize: vertical; line-height: 1.4; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.opts { display: grid; gap: 10px; }
+.opt { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--paper); text-align: left; font-size: 17px; font-weight: 600; width: 100%; }
+.opt small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.opt .i { width: 26px; height: 26px; color: var(--accent); }
+.opts.tight { gap: 6px; }
+.opts.tight .opt { padding: 9px 14px; font-size: 16px; gap: 12px; }
+.opts.tight .opt .i { width: 22px; height: 22px; }
+.xentry { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px; border: 1px dashed var(--line); color: var(--muted); font-size: 14px; }
+.xentry .i { width: 20px; height: 20px; color: var(--muted); flex: none; }
+.xentry b { color: var(--ink); font-weight: 600; }
+.choice { display: flex; flex-wrap: wrap; gap: 6px; }
+.choice button { border: 1.5px solid var(--line); background: var(--paper); border-radius: 999px; padding: 7px 12px; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.choice button[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--paper)); font-weight: 700; }
+.rate { display: flex; gap: 6px; }
+.rate button { font-size: 34px; line-height: 1; color: var(--line); }
+.rate button.on { color: var(--accent); }
+.photo-add { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 14px; border: 1.5px dashed var(--line); color: var(--muted); font-weight: 600; width: 100%; }
+.stepper { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+.stepper button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper); font-size: 18px; line-height: 1; }
+.note { font-size: 13px; color: var(--muted); line-height: 1.45; margin: 0; }
+.loading { display: grid; place-items: center; gap: 16px; text-align: center; padding: 60px 0; }
+.spinner { width: 36px; height: 36px; border-radius: 50%; border: 3.5px solid var(--line); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.snack { position: absolute; left: 12px; right: 12px; bottom: 84px; background: var(--ink); color: var(--paper); border-radius: 14px; padding: 12px 14px; font-size: 15px; z-index: 30; box-shadow: var(--shadow); display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.snack button { font-weight: 700; padding: 4px 10px; border-radius: 8px; background: var(--accent); color: var(--on-accent); }
+.estbox { border: 1px dashed var(--muted); border-radius: 14px; padding: 12px; display: grid; gap: 10px; }
+.estbox .h { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.maptbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.maptbl th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 4px 6px; }
+.maptbl td { padding: 4px 6px; border-top: 1px solid var(--line); }
+.maptbl input { width: 100%; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); padding: 0 8px; font-size: 14px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stats div { padding: 10px 12px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); }
+.stats b { display: block; font-family: var(--font-display); font-size: 22px; font-variant-numeric: tabular-nums; }
+.stats span { font-size: 13px; color: var(--muted); }
+.warnline { font-size: 13px; color: var(--warn); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+</style>
+
+<div class="stage">
+  <div class="phone" id="phone">
+    <div id="screen" style="display:contents"></div>
+    <nav class="nav" aria-label="Carnets">
+      <button data-other="Courses"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M4 9h16l-2.2 10.2a2 2 0 0 1-2 1.6H8.2a2 2 0 0 1-2-1.6z"/><path d="M8.5 9l3-5M15.5 9l-3-5"/></svg></span>Courses</button>
+      <button data-other="Recettes"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg></span>Recettes</button>
+      <button aria-current="page" data-home><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M10 2h4v4.5c0 1 2.5 2.4 2.5 5.5v9a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9c0-3.1 2.5-4.5 2.5-5.5z"/><path d="M7.5 14h9"/></svg></span>Cave</button>
+      <button data-other="Souvenirs"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M12 22s7-6.1 7-12a7 7 0 0 0-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg></span>Souvenirs</button>
+    </nav>
+    <div id="layer"></div>
+  </div>
+
+  <aside class="notes">
+    <h1>Cave</h1>
+    <p>Maquette du carnet Cave, à valider avant le développement de la phase 3. Les données sont des exemples et rien n'est enregistré. Aucune valeur de cave n'est affichée nulle part.</p>
+    <ul>
+      <li><b>À boire</b> (vue par défaut) : les bouteilles classées par année de fin de leur fenêtre, comme dans CellarTracker. En rouge, celles dont la fenêtre est passée.</li>
+      <li><b>Sortir une bouteille</b> depuis une fiche : le stock baisse d'une bouteille et tu dis pourquoi. Bue (chez toi ou ailleurs) : tu notes la dégustation. Offerte, pour la cuisine, bouchonnée, cassée, disparue, vendue : une ligne dans l'historique du vin, sans note.</li>
+      <li><b>Ma cave</b>, puis <b>Plan</b> : chaque lieu et chacune de ses clayettes, dessinés d'après ce que tu as saisi. Touche une clayette pour voir ses vins.</li>
+      <li><b>Dégustés</b> remplace Vivino : tes notes, y compris pour les bouteilles bues ailleurs. <b>Envies</b> garde les vins à acheter.</li>
+      <li><b>+ Vin</b> : photo de l'étiquette, puis une fiche à vérifier. Ce qui est déduit par ChatGPT (fenêtre, cépages, accords) porte la mention « estimation ».</li>
+      <li><b>Importer de CellarTracker</b> : bandeau en haut de « Ma cave », avec un écran de revue avant l'import.</li>
+    </ul>
+  </aside>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const P = {
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    back: '<path d="M15 5l-7 7 7 7"/>',
+    more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+    camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+    image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/>',
+    pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>',
+    sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+    glass: '<path d="M7 3h10l-.6 6.2a4.4 4.4 0 0 1-8.8 0z"/><path d="M12 13.6V20M8.5 21h7"/>',
+    upload: '<path d="M12 16V4M7.5 8.5L12 4l4.5 4.5M5 20h14"/>',
+    heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+    trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+    gift: '<rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M3 9h18M12 9v11M12 9c-1.5-4-6-4-5-1.5S12 9 12 9zM12 9c1.5-4 6-4 5-1.5S12 9 12 9z"/>',
+    alert: '<path d="M12 3l9.5 17h-19z"/><path d="M12 10v4.5M12 17.5v.5"/>',
+    broken: '<path d="M10 2h4v4.5c0 1 2.5 2.4 2.5 5.5v9a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9c0-3.1 2.5-4.5 2.5-5.5z"/><path d="M7.5 13l3 2-2 2.5 3 2"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 16.8v.4"/>',
+    swap: '<path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5"/>',
+    pin: '<path d="M12 22s7-6.1 7-12a7 7 0 0 0-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/>',
+  };
+  const ic = (n, a) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" ${a || ''}>${P[n]}</svg>`;
+  const stars = n => `<span class="stars" aria-label="${n} sur 5">${'★'.repeat(Math.round(n))}<span class="off">${'★'.repeat(5 - Math.round(n))}</span></span>`;
+  const NOW = 2026;
+  const COLS = { rouge: 'Rouge', blanc: 'Blanc', rose: 'Rosé', bulles: 'Effervescent', doux: 'Liquoreux' };
+  const bottle = c => `<svg viewBox="0 0 34 54" width="34" height="54" aria-hidden="true"><path d="M14 2h6v10c0 2 6 4 6 11v27a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V23c0-7 6-9 6-11z" fill="var(--w-${c})" stroke="rgba(0,0,0,.18)"/><rect x="10" y="28" width="14" height="12" rx="1.5" fill="#f7f1e1" opacity=".9"/></svg>`;
+
+  // ---------- Données d'exemple ----------
+  // stock : [lieu, clayette, nombre] ; fen : [de, à, estimée ?] ; j : dégustations (le plus récent en premier)
+  const W = [
+    { id: 'chinon', dom: 'Domaine des Roches Neuves', cuv: 'Terres de Chinon', mil: 2020, col: 'rouge', app: 'Chinon', reg: 'Loire', cep: 'Cabernet franc', stock: [['Cave', 'B2', 4]], prix: 16, achat: 'Salon des vins, mars 2023', fen: [2023, 2026, false], style: 'Fruit rouge, frais, tanins souples', acc: ['Curry de pois chiches et épinards'], gen: ['Volaille rôtie', 'Charcuterie'], out: [{ d: '14 févr. 2026', r: 'defaut', x: 'bouchonnée, rapportée au caviste' }], j: [{ d: '8 nov. 2026', s: 4, c: 'Parfait maintenant, ne pas attendre.', plat: 'Poulet rôti', pc: '#9a3b4c' }] },
+    { id: 'savennieres', dom: 'Domaine du Closel', cuv: 'La Jalousie', mil: 2019, col: 'blanc', app: 'Savennières', reg: 'Loire', cep: 'Chenin blanc', stock: [['Cave', 'A1', 2]], prix: 22, achat: 'Caviste du quartier, déc. 2022', fen: [2022, 2026, false], style: 'Sec, minéral, cire d’abeille', acc: ['Velouté de potimarron'], gen: ['Poisson en sauce'], j: [] },
+    { id: 'morgon', dom: 'Domaine Lapierre', cuv: 'Morgon', mil: 2021, col: 'rouge', app: 'Morgon', reg: 'Beaujolais', cep: 'Gamay', stock: [['Armoire cuisine', '2', 3]], prix: 24, achat: 'En ligne, sept. 2023', fen: [2023, 2027, false], style: 'Juteux, croquant', acc: ['Poireaux vinaigrette'], gen: ['Charcuterie', 'Fromages'], j: [{ d: '2 oct. 2026', s: 5, c: 'Gourmand, servi frais.', plat: 'Planche apéro', pc: '#a13d55' }] },
+    { id: 'crozes', dom: 'Domaine Combier', cuv: 'Clos des Grives', mil: 2018, col: 'rouge', app: 'Crozes-Hermitage', reg: 'Rhône', cep: 'Syrah', stock: [['Cave', 'B1', 2], ['Armoire cuisine', '1', 1]], prix: 38, achat: 'Cadeau', fen: [2022, 2025, false], style: 'Poivre, olive noire', acc: [], gen: ['Agneau', 'Grillades'], out: [{ d: '3 juin 2026', r: 'offerte', x: 'à Paul et Claire' }], j: [] },
+    { id: 'champagne', dom: 'Champagne Bérêche', cuv: 'Brut Réserve', mil: 'NM', col: 'bulles', app: 'Champagne', reg: 'Champagne', cep: 'Pinot noir, chardonnay, meunier', stock: [['Armoire cuisine', '4', 2]], prix: 42, achat: 'Caviste, nov. 2025', fen: [2025, 2027, true], style: 'Vineux, brioché', acc: ['Houmous au tahini'], gen: ['Apéritif'], j: [] },
+    { id: 'meursault', dom: 'Domaine Ballot-Millot', cuv: 'Meursault Les Narvaux', mil: 2020, col: 'blanc', app: 'Meursault', reg: 'Bourgogne', cep: 'Chardonnay', stock: [['Cave', 'A2', 3]], prix: 55, achat: 'Domaine, juil. 2022', fen: [2024, 2030, false], style: 'Beurré, noisette, tendu', acc: [], gen: ['Volaille à la crème', 'Saint-Jacques'], j: [{ d: '24 déc. 2025', s: 5, c: 'Magnifique avec le chapon.', plat: 'Chapon aux morilles', pc: '#c9a35c' }] },
+    { id: 'bandol', dom: 'Domaine Tempier', cuv: 'Bandol rouge', mil: 2017, col: 'rouge', app: 'Bandol', reg: 'Provence', cep: 'Mourvèdre', stock: [['Cave', 'B3', 2]], prix: 39, achat: 'En ligne, 2020', fen: [2024, 2032, false], style: 'Garrigue, cuir, ample', acc: ['Gratin dauphinois'], gen: ['Daube', 'Gibier'], j: [] },
+    { id: 'riesling', dom: 'Domaine Ostertag', cuv: 'Riesling Heissenberg', mil: 2021, col: 'blanc', app: 'Alsace', reg: 'Alsace', cep: 'Riesling', stock: [['Cave', 'A1', 3]], prix: 31, achat: 'Salon des vins, mars 2023', fen: [2025, 2031, true], style: 'Citron, pierre à fusil', acc: [], gen: ['Choucroute de poisson', 'Cuisine thaï'], j: [] },
+    { id: 'pomerol', dom: 'Château La Conseillante', cuv: 'Pomerol', mil: 2016, col: 'rouge', app: 'Pomerol', reg: 'Bordeaux', cep: 'Merlot, cabernet franc', stock: [['Cave', 'C1', 2]], prix: 120, achat: 'Primeurs 2017', fen: [2026, 2040, false], style: 'Velouté, truffe, violette', acc: [], gen: ['Bœuf', 'Champignons'], j: [] },
+    { id: 'sauternes', dom: 'Château Doisy-Daëne', cuv: 'Sauternes', mil: 2015, col: 'doux', app: 'Sauternes', reg: 'Bordeaux', cep: 'Sémillon, sauvignon', stock: [['Cave', 'C2', 1]], prix: 34, achat: 'Caviste, 2019', fen: [2022, 2035, false], style: 'Abricot, miel, fraîcheur', acc: ['Tarte fine aux pommes'], gen: ['Foie gras', 'Bleu'], j: [] },
+    { id: 'barolo', dom: 'G.D. Vajra', cuv: 'Barolo Albe', mil: 2019, col: 'rouge', app: 'Barolo', reg: 'Piémont', cep: 'Nebbiolo', stock: [['Cave', 'C1', 2]], prix: 36, achat: 'Voyage, août 2023', fen: [2027, 2035, true], style: 'Rose, goudron, tanins fermes', acc: [], gen: ['Risotto aux champignons'], j: [] },
+    { id: 'tavel', dom: 'Domaine de la Mordorée', cuv: 'Tavel La Dame Rousse', mil: 2023, col: 'rose', app: 'Tavel', reg: 'Rhône', cep: 'Grenache, cinsault', stock: [['Armoire cuisine', '3', 2]], prix: 17, achat: 'Caviste, juin 2025', fen: [2024, 2026, true], style: 'Fruité, vineux', acc: ['Spritz au pamplemousse'], gen: ['Grillades d’été'], j: [] },
+  ];
+  // Dégustés ailleurs (pas dans la cave) et envies
+  const OUT = [
+    { dom: 'Domaine Gramenon', cuv: 'La Sagesse', mil: 2022, col: 'rouge', app: 'Côtes-du-Rhône', d: '15 nov. 2026', s: 5, c: 'Pur, sans soufre ajouté. À acheter.', ou: 'Restaurant Le Saint-Sébastien', pc: '#8c3446' },
+    { dom: 'Domaine Huet', cuv: 'Le Mont sec', mil: 2020, col: 'blanc', app: 'Vouvray', d: '20 sept. 2026', s: 4, c: '', ou: 'Chez les Martin', pc: '#d1b35a' },
+  ];
+  const ENVIES = [
+    { dom: 'Domaine Gramenon', cuv: 'La Sagesse', col: 'rouge', app: 'Côtes-du-Rhône', why: 'Goûté au Saint-Sébastien, 5 étoiles' },
+    { dom: 'Domaine Jamet', cuv: 'Côte-Rôtie', col: 'rouge', app: 'Côte-Rôtie', why: 'Conseil du caviste' },
+    { dom: 'Domaine Belluard', cuv: 'Les Alpes', col: 'blanc', app: 'Savoie', why: 'Pour la raclette' },
+  ];
+
+  const total = () => W.reduce((n, w) => n + w.stock.reduce((a, s) => a + s[2], 0), 0);
+  const nb = w => w.stock.reduce((a, s) => a + s[2], 0);
+  const name = w => `${w.dom}${w.cuv && w.cuv !== w.app ? ' · ' + w.cuv : ''}`;
+  const where = w => w.stock.filter(s => s[2]).map(s => `${s[0]} · ${s[0] === 'Cave' ? 'clayette ' : 'étagère '}${s[1]}`).join(', ');
+
+  // ---------- État ----------
+  const state = { view: 'boire', id: null, q: '', caveMode: 'plan' };
+
+  function render() {
+    $('#screen').innerHTML = state.id ? renderFiche() : renderHome();
+  }
+
+  // ---------- Accueil ----------
+  function matches(w, q) {
+    if (!q) return true;
+    const n = x => String(x).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    return [w.dom, w.cuv, w.app, w.reg, w.cep, w.mil].some(x => n(x).includes(n(q)));
+  }
+  const wrow = w => {
+    const late = w.fen[1] < NOW, young = w.fen[0] > NOW;
+    return `<button class="wrow" data-open="${w.id}">
+      <span class="bottle">${bottle(w.col)}</span>
+      <span class="t"><b>${esc(name(w))}</b>
+        <span class="meta">${w.mil} · ${esc(w.app)}</span>
+        <span class="meta">${esc(where(w))}</span></span>
+      <span class="side"><span class="n">×${nb(w)}</span>
+        <span class="tag ${late ? 'late' : w.fen[2] ? 'est' : 'plain'}">${young ? 'dès ' + w.fen[0] : w.fen[0] + '–' + w.fen[1]}</span></span>
+    </button>`;
+  };
+
+  function renderHome() {
+    const views = [['boire', 'À boire'], ['cave', 'Ma cave'], ['bus', 'Dégustés'], ['envies', 'Envies']];
+    let h = `<div class="topbar"><h1 class="title">Cave</h1><div style="display:flex;align-items:center;gap:2px"><span class="sync">à jour</span><button class="iconbtn" aria-label="Réglages" data-soon>${ic('sliders')}</button></div></div>
+      <div class="main"><div class="scroll" id="scroll">
+      <div class="seg" role="group" aria-label="Vue">${views.map(([k, n]) => `<button data-view="${k}" aria-pressed="${state.view === k}">${n}</button>`).join('')}</div>
+      <div class="searchrow"><label class="search">${ic('search')}<input id="q" value="${esc(state.q)}" placeholder="Domaine, appellation, cépage…" aria-label="Chercher un vin"></label></div>`;
+    const list = W.filter(w => nb(w) && matches(w, state.q));
+
+    if (state.view === 'boire') {
+      h += `<p class="summary"><span><b>${total()}</b> bouteilles</span><span><b>${W.filter(nb).length}</b> vins</span><span>classées par fin de fenêtre</span></p>`;
+      const ready = list.filter(w => w.fen[0] <= NOW);
+      const young = list.filter(w => w.fen[0] > NOW).sort((a, b) => a.fen[0] - b.fen[0]);
+      const groups = {};
+      ready.forEach(w => { const y = Math.max(w.fen[1], NOW - 1); (groups[y] = groups[y] || []).push(w); });
+      Object.keys(groups).sort().forEach(y => {
+        const ws = groups[y], n = ws.reduce((a, w) => a + nb(w), 0);
+        const label = +y < NOW ? 'Fenêtre dépassée' : +y === NOW ? 'À boire en 2026' : `À boire avant fin ${y}`;
+        h += `<div class="sec-h${+y < NOW ? ' late' : ''}"><h2>${label}</h2><span>${n} bouteille${n > 1 ? 's' : ''}</span></div>${ws.map(wrow).join('')}`;
+      });
+      if (young.length) h += `<div class="sec-h"><h2>Pas encore prêts</h2><span>${young.reduce((a, w) => a + nb(w), 0)} bouteilles</span></div>${young.map(wrow).join('')}`;
+      if (!list.length) h += '<p class="hint" style="padding-top:16px">Aucun vin ne correspond.</p>';
+      h += `<p class="hint" style="padding-top:14px">Rayures : fenêtre estimée par ChatGPT, à corriger quand tu sais mieux.</p>`;
+    } else if (state.view === 'cave') {
+      h += `<button class="banner" data-import><b>${ic('upload', 'style="width:18px;height:18px;vertical-align:-3px"')} Importer depuis CellarTracker</b><span class="note">Ton abonnement se termine le 14 décembre : exporte tes données avant. Tu vérifies tout avant l’import.</span></button>`;
+      h += `<div class="sec-h"><h2>${total()} bouteilles</h2><span>${W.filter(nb).length} vins · 2 lieux</span></div>
+        <div class="toggle" role="group" aria-label="Affichage"><button data-cmode="plan" aria-pressed="${state.caveMode === 'plan'}">Plan</button><button data-cmode="liste" aria-pressed="${state.caveMode === 'liste'}">Liste</button></div>`;
+      if (state.caveMode === 'plan') {
+        h += `<div class="legend">${Object.entries(COLS).map(([k, n]) => `<span><i class="dot" style="--wc:var(--w-${k})"></i>${n}</span>`).join('')}</div>`;
+        const places = {};
+        W.forEach(w => w.stock.forEach(([l, c, n]) => { if (!n || !matches(w, state.q)) return; places[l] = places[l] || {}; (places[l][c] = places[l][c] || []).push([w, n]); }));
+        Object.entries(places).forEach(([l, shelves]) => {
+          const n = Object.values(shelves).flat().reduce((a, x) => a + x[1], 0);
+          h += `<div class="place"><h3>${esc(l)} <span>${n} bouteilles</span></h3>${Object.keys(shelves).sort((a, b) => a.localeCompare(b, 'fr', { numeric: true })).map(c => {
+            const bots = shelves[c].flatMap(([w, k]) => Array(k).fill(w.col));
+            return `<button class="shelf" data-shelf="${esc(l)}|${esc(c)}"><span class="lbl">${esc(c)}</span><span class="bots">${bots.map(col => `<i style="--wc:var(--w-${col})"></i>`).join('')}</span><span class="c">${bots.length}</span></button>`;
+          }).join('')}</div>`;
+        });
+        h += `<p class="hint" style="padding-top:12px">Le plan se dessine d’après les lieux et clayettes que tu saisis : rien à configurer.</p>`;
+      } else {
+        const byCol = {};
+        list.forEach(w => (byCol[w.col] = byCol[w.col] || []).push(w));
+        Object.keys(COLS).filter(k => byCol[k]).forEach(k => {
+          h += `<div class="sec-h"><h2>${COLS[k]}</h2><span>${byCol[k].reduce((a, w) => a + nb(w), 0)}</span></div>${byCol[k].sort((a, b) => a.reg.localeCompare(b.reg)).map(wrow).join('')}`;
+        });
+      }
+    } else if (state.view === 'bus') {
+      const all = [
+        ...W.flatMap(w => w.j.map(e => ({ w, e, ou: e.ou ? 'Apportée · ' + e.ou : 'De ta cave' }))),
+        ...OUT.map(o => ({ w: o, e: { d: o.d, s: o.s, c: o.c, pc: o.pc }, ou: o.ou })),
+      ].sort((a, b) => toDate(b.e.d) - toDate(a.e.d));
+      h += `<div class="sec-h"><h2>Dégustés</h2><span>${all.length} notes</span></div>`;
+      h += all.filter(x => matches(x.w, state.q)).map(({ w, e, ou }) => `<button class="tast"${w.id ? ` data-open="${w.id}"` : ' data-outside'}><span class="ph" style="--pc:${e.pc || 'var(--soft)'}"></span>
+        <span><b>${esc(name(w))} ${w.mil}</b><br><span class="meta">${e.d}</span> ${stars(e.s)}${e.c ? `<p>${esc(e.c)}</p>` : ''}
+        <span class="pl"><span class="tag plain">${esc(ou)}</span>${e.plat ? `<span>avec ${esc(e.plat)}</span>` : ''}</span></span></button>`).join('');
+      h += `<p class="hint" style="padding-top:12px">« + Vin » puis « Dégusté ailleurs » pour noter une bouteille bue au restaurant ou chez des amis, sans la mettre en cave.</p>`;
+    } else {
+      h += `<div class="sec-h"><h2>Envies</h2><span>${ENVIES.length} vins à acheter</span></div>`;
+      h += ENVIES.filter(w => matches(w, state.q)).map((w, k) => `<div class="wrow"><span class="bottle">${bottle(w.col)}</span><span class="t"><b>${esc(name(w))}</b><span class="meta">${esc(w.app)}</span><span class="meta">${esc(w.why)}</span></span><button class="btn small" data-bought="${k}">Acheté</button></div>`).join('');
+      h += `<p class="hint" style="padding-top:12px">« Acheté » range le vin dans la cave : tu choisis la quantité, le lieu et la clayette.</p>`;
+    }
+    h += `</div><button class="fab" data-add>${ic('plus')}Vin</button></div>`;
+    return h;
+  }
+  const MOIS = { 'janv.': 0, 'févr.': 1, mars: 2, 'avr.': 3, mai: 4, juin: 5, 'juil.': 6, août: 7, 'sept.': 8, 'oct.': 9, 'nov.': 10, 'déc.': 11 };
+  const toDate = s => { const [d, m, y] = s.split(' '); return new Date(+y, MOIS[m], +d).getTime(); };
+
+  // ---------- Fiche ----------
+  function renderFiche() {
+    const w = W.find(x => x.id === state.id);
+    const lo = 2016, hi = 2040, pct = y => ((Math.min(Math.max(y, lo), hi) - lo) / (hi - lo)) * 100;
+    const late = w.fen[1] < NOW;
+    return `<div class="main"><div class="scroll" id="scroll" style="padding-bottom:24px">
+      <div class="fiche-top" style="--wc:var(--w-${w.col})"><div class="label"><small>${esc(w.app)}</small><b>${esc(w.dom)}</b><i>${w.mil}</i></div>
+        <button class="back" data-home aria-label="Retour à la cave">${ic('back')}</button><button class="more" data-more aria-label="Plus d’actions">${ic('more')}</button></div>
+      <div class="fiche">
+        <h1>${esc(name(w))} ${w.mil}</h1>
+        <div class="chipsline"><span class="tag plain"><i class="dot" style="--wc:var(--w-${w.col});width:10px;height:10px"></i>${COLS[w.col]}</span><span class="tag plain">${esc(w.app)}</span><span class="tag plain">${esc(w.reg)}</span>${w.j.length ? stars(w.j.reduce((a, e) => a + e.s, 0) / w.j.length) : ''}</div>
+        <div class="stock"><span class="big">${nb(w)}</span><span class="t"><b>bouteille${nb(w) > 1 ? 's' : ''} en cave</b><div class="meta">${esc(where(w)) || 'plus aucune'}</div></span>
+          <button class="btn" data-openbottle ${nb(w) ? '' : 'disabled'}>${ic('glass')}Sortir</button></div>
+        <section class="block"><h2>Fenêtre de dégustation ${w.fen[2] ? '<span class="tag est">estimation ChatGPT</span>' : ''}</h2>
+          <p class="note">${late ? `<span class="warnline">Fenêtre passée depuis ${w.fen[1]} : à boire vite.</span>` : w.fen[0] > NOW ? `Pas encore prête : à attendre jusqu’en ${w.fen[0]}.` : `À boire jusqu’en ${w.fen[1]}.`}</p>
+          <div class="win" aria-label="De ${w.fen[0]} à ${w.fen[1]}"><div class="track"></div><div class="band${w.fen[2] ? ' est' : ''}" style="left:${pct(w.fen[0])}%;width:${pct(w.fen[1]) - pct(w.fen[0])}%"></div><div class="now" style="left:${pct(NOW)}%"></div>
+            <div class="ticks"><span>${lo}</span><span>2022</span><span>2028</span><span>2034</span><span>${hi}</span></div></div>
+          <button class="btn ghost small" data-editwin style="margin-top:8px">Modifier la fenêtre</button></section>
+        <section class="block"><h2>Emplacement</h2><div class="locs">${w.stock.map(s => `<div class="loc">${ic('pin', 'style="width:18px;height:18px;color:var(--accent)"')}<b>${esc(s[0])} · ${s[0] === 'Cave' ? 'clayette' : 'étagère'} ${esc(s[1])}</b><span class="n">×${s[2]}</span></div>`).join('')}</div>
+          <button class="btn ghost small" data-move style="margin-top:8px">Déplacer ou ajouter des bouteilles</button></section>
+        <section class="block"><h2>Le vin</h2><div class="kv">
+          <span>Cépages</span><span>${esc(w.cep)}${w.fen[2] ? ' <span class="tag est">estimation</span>' : ''}</span>
+          <span>Style</span><span>${esc(w.style)}</span>
+          <span>Achat</span><span>${w.prix} € la bouteille · ${esc(w.achat)}</span></div></section>
+        <section class="block"><h2>Avec quoi le boire</h2><div class="pairs">${w.acc.map(a => `<button class="pair" data-recipe="${esc(a)}">${ic('book')}${esc(a)}</button>`).join('')}${w.gen.map(a => `<span class="pair gen">${esc(a)}</span>`).join('')}</div>
+          <p class="note" style="margin-top:8px">En terracotta : des recettes de ton carnet. Accords proposés par ChatGPT, à titre d’idée.</p></section>
+        <section class="block"><h2>Historique <span class="meta" style="font-family:var(--font-body)">${w.j.length ? 'bu ' + w.j.length + ' fois' : ''}</span></h2>
+          <div class="locs">${hist(w).length ? hist(w).map(({ e, x }) => x
+            ? `<div class="xentry">${ic(REASON[x.r][2])}<span><b>${REASON[x.r][3]}</b> · ${x.d}${x.x ? ' · ' + esc(x.x) : ''}</span></div>`
+            : `<div class="jentry"><span class="ph" style="--pc:${e.pc}"></span><div><span class="meta">${e.d}${e.ou ? ' · ' + esc(e.ou) : ''}</span> ${stars(e.s)}${e.c ? `<p>${esc(e.c)}</p>` : ''}${e.plat ? `<span class="meta">avec ${esc(e.plat)}</span>` : ''}</div></div>`).join('') : '<p class="note">Aucune bouteille sortie. « Sortir » baisse le stock et te demande pourquoi : bue, offerte, bouchonnée…</p>'}</div></section>
+      </div></div></div>`;
+  }
+
+  // ---------- Feuilles ----------
+  function sheet(html, full) {
+    $('#layer').innerHTML = `<div class="overlay" data-close><div class="sheet${full ? ' full' : ''}" role="dialog" aria-modal="true">${full ? '' : '<div class="grab"></div>'}${html}</div></div>`;
+    return $('#layer .sheet');
+  }
+  const close = () => { $('#layer').innerHTML = ''; };
+  // Redessine une feuille sans perdre ce qui a déjà été tapé
+  const keep = (sh, draw) => () => {
+    const v = {}; sh.querySelectorAll('input, textarea').forEach((el, k) => (v[el.id || k] = el.value));
+    draw(); sh.querySelectorAll('input, textarea').forEach((el, k) => { const x = v[el.id || k]; if (x !== undefined) el.value = x; });
+  };
+  let snackT;
+  function snack(msg, undo) {
+    clearTimeout(snackT); document.querySelectorAll('.snack').forEach(x => x.remove());
+    const el = document.createElement('div'); el.className = 'snack'; el.setAttribute('role', 'status');
+    el.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button>Annuler</button>' : ''}`;
+    $('#phone').appendChild(el);
+    if (undo) el.querySelector('button').onclick = () => { undo(); el.remove(); render(); };
+    snackT = setTimeout(() => el.remove(), 4000);
+  }
+
+  // Raisons de sortie : [libellé du choix, aide, icône, libellé dans l'historique]
+  const REASON = {
+    maison: ['Bue à la maison', 'Tu notes la dégustation juste après', 'glass', 'Bue'],
+    ailleurs: ['Apportée et bue ailleurs', 'Chez des amis, au restaurant, à une dégustation', 'pin', 'Bue ailleurs'],
+    offerte: ['Offerte', 'Tu peux dire à qui', 'gift', 'Offerte'],
+    cuisine: ['Pour la cuisine', 'Liée à une recette du carnet', 'book', 'Pour la cuisine'],
+    defaut: ['Bouchonnée ou abîmée', 'Bouchon, oxydation… rapportée ou non', 'alert', 'Défaut'],
+    cassee: ['Cassée', '', 'broken', 'Cassée'],
+    disparue: ['Disparue, sans doute bue', 'Pour remettre le stock juste', 'help', 'Disparue'],
+    vendue: ['Vendue ou échangée', '', 'swap', 'Vendue ou échangée'],
+  };
+  const hist = w => [...w.j.map(e => ({ e, t: toDate(e.d) })), ...(w.out || []).map(x => ({ x, t: toDate(x.d) }))].sort((a, b) => b.t - a.t);
+
+  function openBottle() {
+    const w = W.find(x => x.id === state.id);
+    const spots = w.stock.filter(s => s[2]);
+    let sp = 0;
+    const sh = sheet('');
+    const draw = () => {
+      sh.innerHTML = `<div class="grab"></div><div class="sheet-head"><h2>Sortir une bouteille</h2><button class="btn ghost small" data-x>Annuler</button></div>
+        <p class="note" style="margin-top:-6px">${esc(name(w))} ${w.mil} · il en reste ${nb(w)}</p>
+        ${spots.length > 1 ? `<div class="field"><span class="lab">D’où sort-elle</span><div class="choice">${spots.map((s, k) => `<button data-spot="${k}" aria-pressed="${sp === k}">${esc(s[0])} · ${esc(s[1])} (${s[2]})</button>`).join('')}</div></div>` : ''}
+        <div class="field"><span class="lab">Pourquoi</span><div class="opts tight">${Object.entries(REASON).map(([k, r]) => `<button class="opt" data-reason="${k}">${ic(r[2])}<span>${r[0]}${r[1] ? `<small>${r[1]}</small>` : ''}</span></button>`).join('')}</div></div>`;
+    };
+    sh.addEventListener('click', e => {
+      const b = e.target.closest('[data-spot]'); if (b) { sp = +b.dataset.spot; draw(); return; }
+      const r = e.target.closest('[data-reason]'); if (r) take(w, spots[sp], r.dataset.reason);
+    });
+    draw();
+  }
+
+  function take(w, s, r) {
+    s[2]--; close();
+    let x = null;
+    if (r !== 'maison' && r !== 'ailleurs') { x = { d: '20 nov. 2026', r, x: '' }; (w.out = w.out || []).unshift(x); }
+    render();
+    snack(`${REASON[r][3]} (${s[0]} · ${s[1]}) : il en reste ${nb(w)}`, () => { s[2]++; if (x) w.out.splice(w.out.indexOf(x), 1); });
+    const next = { maison: () => drankSheet(w), ailleurs: () => drankSheet(w, 'apportee'), offerte: () => detailSheet(w, x, 'offerte'), cuisine: () => detailSheet(w, x, 'cuisine'), defaut: () => detailSheet(w, x, 'defaut') }[r];
+    if (next) setTimeout(next, 300);
+  }
+
+  // Précision facultative pour une sortie sans dégustation
+  function detailSheet(w, x, r) {
+    let pick = r === 'defaut' ? 'bouchonnée' : null, back = false;
+    const recs = ['Daube provençale', 'Risotto au vin rouge', 'Poires au vin', 'Moules marinières'];
+    const sh = sheet('');
+    const draw = keep(sh, () => {
+      sh.innerHTML = `<div class="grab"></div><div class="sheet-head"><h2>${{ offerte: 'Offerte', cuisine: 'Pour la cuisine', defaut: 'Bouchonnée ou abîmée' }[r]}</h2><button class="btn ghost small" data-x>Passer</button></div>
+        <p class="note" style="margin-top:-6px">${esc(name(w))} ${w.mil} · facultatif</p>
+        ${r === 'offerte' ? '<div class="field"><label for="x-who">À qui, pour quelle occasion</label><input id="x-who" placeholder="ex. à Paul, pour son anniversaire"></div>' : ''}
+        ${r === 'cuisine' ? `<div class="field"><span class="lab">Pour quelle recette</span><div class="choice">${recs.map(t => `<button data-pick="${esc(t)}" aria-pressed="${pick === t}">${ic('book', 'style="width:15px;height:15px;color:#b0532b"')}${esc(t)}</button>`).join('')}</div>
+          <input aria-label="Autre plat" placeholder="Ou écris le plat"></div>` : ''}
+        ${r === 'defaut' ? `<div class="field"><span class="lab">Le problème</span><div class="choice">${['bouchonnée', 'oxydée', 'trop vieille', 'autre défaut'].map(t => `<button data-pick="${t}" aria-pressed="${pick === t}">${t}</button>`).join('')}</div></div>
+          <div class="field"><span class="lab">Rapportée au caviste</span><div class="choice"><button data-back="1" aria-pressed="${back}">Oui, rapportée ou remplacée</button><button data-back="0" aria-pressed="${!back}">Non</button></div></div>
+          <div class="field"><label for="x-com">Commentaire</label><input id="x-com" placeholder="ex. 2e bouteille du carton touchée"></div>` : ''}
+        <button class="btn wide" data-savex>Enregistrer</button>`;
+    });
+    sh.addEventListener('click', e => {
+      const p = e.target.closest('[data-pick]'); if (p) { pick = r === 'cuisine' && pick === p.dataset.pick ? null : p.dataset.pick; draw(); return; }
+      const bk = e.target.closest('[data-back]'); if (bk) { back = bk.dataset.back === '1'; draw(); return; }
+      if (e.target.closest('[data-savex]')) {
+        if (r === 'offerte') x.x = sh.querySelector('#x-who').value.trim();
+        if (r === 'cuisine') x.x = pick ? 'pour ' + pick : '';
+        if (r === 'defaut') x.x = [pick, back ? 'rapportée au caviste' : '', sh.querySelector('#x-com').value.trim()].filter(Boolean).join(', ');
+        close(); render(); snack('Ajouté à l’historique du vin');
+      }
+    });
+    draw();
+  }
+
+  function drankSheet(w, outside) {
+    let note = 0, plat = null;
+    const recs = ['Curry de pois chiches et épinards', 'Gratin dauphinois', 'Velouté de potimarron', 'Poireaux vinaigrette'];
+    const sh = sheet('');
+    const draw = keep(sh, () => {
+      sh.innerHTML = `<div class="grab"></div><div class="sheet-head"><h2>Je l’ai bu</h2><button class="btn ghost small" data-x>Plus tard</button></div>
+        <p class="note" style="margin-top:-6px">${esc(name(w))} ${w.mil || ''}</p>
+        <div class="field"><label for="b-date">Quand</label><input id="b-date" value="Aujourd’hui, 20 nov. 2026"></div>
+        <div class="field"><span class="lab">Ta note</span><div class="rate">${[1, 2, 3, 4, 5].map(n => `<button data-n="${n}" class="${n <= note ? 'on' : ''}" aria-label="${n} sur 5">★</button>`).join('')}</div></div>
+        <div class="field"><label for="b-com">Commentaire</label><textarea id="b-com" placeholder="Arômes, ouverture, ce que tu en as pensé…"></textarea></div>
+        <div class="field"><span class="lab">Avec quel plat</span><div class="choice">${recs.map(r => `<button data-plat="${esc(r)}" aria-pressed="${plat === r}">${ic('book', 'style="width:15px;height:15px;color:#b0532b"')}${esc(r)}</button>`).join('')}</div>
+          <input aria-label="Autre plat" placeholder="Ou écris le plat (ex. côte de bœuf)"></div>
+        ${outside ? '<div class="field"><label for="b-ou">Où</label><input id="b-ou" placeholder="Restaurant, chez des amis, dégustation…"></div>' : ''}
+        <button class="photo-add">${ic('camera')}Ajouter une photo</button>
+        <button class="btn wide" data-savebu>Enregistrer la dégustation</button>`;
+    });
+    sh.addEventListener('click', e => {
+      const n = e.target.closest('[data-n]'); if (n) { note = +n.dataset.n; draw(); return; }
+      const p = e.target.closest('[data-plat]'); if (p) { plat = plat === p.dataset.plat ? null : p.dataset.plat; draw(); return; }
+      if (e.target.closest('[data-savebu]')) {
+        if (outside !== true) w.j.unshift({ d: '20 nov. 2026', s: note || 4, c: sh.querySelector('#b-com').value.trim(), plat, pc: `var(--w-${w.col})`, ou: outside ? sh.querySelector('#b-ou').value.trim() || 'ailleurs' : '' });
+        close(); render(); snack('Ajouté à tes dégustations');
+      }
+    });
+    draw();
+  }
+
+  function addSheet() {
+    const sh = sheet(`<h2>Ajouter un vin</h2>
+      <div class="opts">
+        <button class="opt" data-read>${ic('camera')}<span>Photographier l’étiquette<small>ChatGPT lit le domaine, la cuvée, le millésime</small></span></button>
+        <button class="opt" data-read>${ic('image')}<span>Choisir dans la galerie<small>Photo d’étiquette, capture d’une carte des vins</small></span></button>
+        <button class="opt" data-manual>${ic('pen')}<span>Saisir à la main</span></button>
+      </div>
+      <p class="note">Ensuite tu choisis : en cave, dégusté ailleurs, ou envie.</p>`);
+    sh.addEventListener('click', e => {
+      if (e.target.closest('[data-read]')) { sheet(`<div class="loading" role="status"><div class="spinner"></div><div><b>ChatGPT lit l’étiquette…</b><p class="note">Domaine, cuvée, millésime, appellation, puis une estimation de la fenêtre de dégustation.</p></div></div>`, true); setTimeout(() => reviewSheet(false), 1300); }
+      if (e.target.closest('[data-manual]')) reviewSheet(true);
+    });
+  }
+
+  function reviewSheet(blank) {
+    let col = blank ? null : 'rouge', kind = 'cave', qty = 6, lieu = 'Cave';
+    const sh = sheet('', true);
+    const draw = () => {
+      sh.innerHTML = `<div class="sheet-head"><h2>${blank ? 'Nouveau vin' : 'Vérifier le vin'}</h2><button class="btn ghost small" data-x>Annuler</button></div>
+        ${blank ? '' : '<p class="note" style="margin-top:-6px">Lu sur ta photo. Corrige ce qui doit l’être.</p>'}
+        <div class="field"><label for="v-dom">Domaine ou château</label><input id="v-dom" value="${blank ? '' : 'Domaine Jean-Louis Chave'}"></div>
+        <div class="g2"><div class="field"><label for="v-cuv">Cuvée</label><input id="v-cuv" value="${blank ? '' : 'Mon Cœur'}"></div><div class="field"><label for="v-mil">Millésime</label><input id="v-mil" inputmode="numeric" value="${blank ? '' : '2022'}"></div></div>
+        <div class="field"><span class="lab">Couleur</span><div class="choice">${Object.entries(COLS).map(([k, n]) => `<button data-col="${k}" aria-pressed="${col === k}"><i class="dot" style="--wc:var(--w-${k});width:10px;height:10px"></i>${n}</button>`).join('')}</div></div>
+        <div class="g2"><div class="field"><label for="v-app">Appellation</label><input id="v-app" value="${blank ? '' : 'Côtes-du-Rhône'}"></div><div class="field"><label for="v-reg">Région</label><input id="v-reg" value="${blank ? '' : 'Rhône'}"></div></div>
+        ${blank ? '' : `<div class="estbox"><div class="h"><span>Estimations ChatGPT</span><span class="tag est">à vérifier</span></div>
+          <div class="field"><label for="v-cep">Cépages</label><input id="v-cep" value="Syrah, grenache"></div>
+          <div class="g2"><div class="field"><label for="v-f1">À boire dès</label><input id="v-f1" inputmode="numeric" value="2025"></div><div class="field"><label for="v-f2">Jusqu’à</label><input id="v-f2" inputmode="numeric" value="2030"></div></div>
+          <div class="field"><span class="lab">Accords</span><div class="pairs"><span class="pair">${ic('book')}Gratin dauphinois</span><span class="pair gen">Agneau</span><span class="pair gen">Grillades</span></div></div></div>`}
+        <div class="field"><span class="lab">Ce vin est…</span><div class="choice">${[['cave', 'En cave'], ['ailleurs', 'Dégusté ailleurs'], ['envie', 'Une envie']].map(([k, n]) => `<button data-kind="${k}" aria-pressed="${kind === k}">${n}</button>`).join('')}</div></div>
+        ${kind === 'cave' ? `<div class="field"><span class="lab">Bouteilles</span><span class="stepper"><button data-q="-1" aria-label="Une de moins">−</button><span>${qty}</span><button data-q="1" aria-label="Une de plus">+</button></span></div>
+          <div class="g2"><div class="field"><label for="v-lieu">Lieu</label><select id="v-lieu"><option ${lieu === 'Cave' ? 'selected' : ''}>Cave</option><option ${lieu !== 'Cave' ? 'selected' : ''}>Armoire cuisine</option><option>+ Nouveau lieu…</option></select></div>
+          <div class="field"><label for="v-clay">Clayette</label><input id="v-clay" value="B3" list="clays"><datalist id="clays"><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>B3</option><option>C1</option></datalist></div></div>
+          <div class="g2"><div class="field"><label for="v-prix">Prix d’achat (bouteille)</label><input id="v-prix" inputmode="decimal" placeholder="€" value="${blank ? '' : '19'}"></div><div class="field"><label for="v-chez">Acheté chez</label><input id="v-chez" placeholder="Caviste, domaine…"></div></div>` : ''}
+        ${kind === 'envie' ? '<div class="field"><label for="v-why">Pourquoi</label><input id="v-why" placeholder="Goûté chez…, conseil du caviste…"></div>' : ''}
+        <button class="btn wide" data-savevin ${col ? '' : 'disabled'}>${kind === 'cave' ? `Ranger ${qty} bouteille${qty > 1 ? 's' : ''}` : kind === 'envie' ? 'Ajouter aux envies' : 'Continuer : noter la dégustation'}</button>`;
+    };
+    sh.addEventListener('click', e => {
+      const c = e.target.closest('[data-col]'); if (c) { col = c.dataset.col; draw(); return; }
+      const k = e.target.closest('[data-kind]'); if (k) { kind = k.dataset.kind; draw(); return; }
+      const q = e.target.closest('[data-q]'); if (q) { qty = Math.max(1, qty + +q.dataset.q); draw(); return; }
+      if (e.target.closest('[data-savevin]')) {
+        if (kind === 'ailleurs') { drankSheet({ dom: 'Domaine Jean-Louis Chave', cuv: 'Mon Cœur', mil: 2022, col }, true); return; }
+        close(); snack(kind === 'cave' ? `${qty} bouteilles rangées : Cave · B3` : 'Ajouté à tes envies');
+      }
+    });
+    sh.addEventListener('change', e => { if (e.target.id === 'v-lieu') lieu = e.target.value; });
+    draw();
+  }
+
+  function shelfSheet(l, c) {
+    const ws = W.filter(w => w.stock.some(s => s[0] === l && s[1] === c && s[2]));
+    sheet(`<h2>${esc(l)} · ${esc(c)}</h2><div style="margin:0 -18px">${ws.map(wrow).join('')}</div>`);
+  }
+
+  function importSheet() {
+    let step = 1;
+    const sh = sheet('', true);
+    const draw = () => {
+      if (step === 1) sh.innerHTML = `<div class="sheet-head"><h2>Importer de CellarTracker</h2><button class="btn ghost small" data-x>Annuler</button></div>
+        <p class="warnline">À faire avant le 14 décembre 2026, fin de ton abonnement.</p>
+        <div class="opts">
+          <div class="opt" style="cursor:default">${ic('upload')}<span>1. Sur cellartracker.com, exporte ta cave<small>Le fichier CSV de tes bouteilles en stock, avec leur emplacement et leur prix d’achat</small></span></div>
+          <div class="opt" style="cursor:default">${ic('glass')}<span>2. Exporte aussi tes notes<small>Le fichier CSV des bouteilles bues et de tes notes de dégustation</small></span></div>
+          <button class="opt" data-files>${ic('image')}<span>3. Choisir les fichiers<small>Depuis le téléphone ou Google Drive</small></span></button>
+        </div>
+        <p class="note">Rien n’est importé avant que tu aies vérifié l’écran suivant. La valeur estimée de CellarTracker n’est pas reprise.</p>`;
+      else sh.innerHTML = `<div class="sheet-head"><h2>Vérifier l’import</h2><button class="btn ghost small" data-x>Annuler</button></div>
+        <div class="stats"><div><b>142</b><span>vins</span></div><div><b>318</b><span>bouteilles en stock</span></div><div><b>96</b><span>dégustations notées</span></div><div><b>23</b><span>autres sorties (offertes, bouchonnées…)</span></div><div><b>131</b><span>fenêtres de dégustation</span></div></div>
+        <section><h3>Emplacements</h3><p class="note" style="margin-bottom:8px">CellarTracker a « Location » et « Bin » : ils deviennent lieu et clayette. Renomme si besoin.</p>
+          <div style="overflow-x:auto"><table class="maptbl"><thead><tr><th>CellarTracker</th><th>Lieu</th><th>Clayettes</th></tr></thead><tbody>
+          <tr><td>Cellar</td><td><input aria-label="Lieu pour Cellar" value="Cave"></td><td>A1 à C6 (18)</td></tr>
+          <tr><td>Kitchen</td><td><input aria-label="Lieu pour Kitchen" value="Armoire cuisine"></td><td>1 à 4</td></tr>
+          <tr><td>(vide)</td><td><input aria-label="Lieu pour emplacement vide" value="À ranger"></td><td>12 bouteilles</td></tr></tbody></table></div></section>
+        <section><h3>À vérifier</h3><div class="opts">
+          <div class="opt" style="cursor:default;font-size:15px">11 vins sans fenêtre de dégustation<small>ChatGPT pourra en proposer une, marquée « estimation »</small></div>
+          <div class="opt" style="cursor:default;font-size:15px">Les raisons de sortie sont reprises<small>Drank → bue, Gave away → offerte, Spoiled → bouchonnée, Dropped → cassée, Missing → disparue, Used for cooking → cuisine…</small></div>
+          <div class="opt" style="cursor:default;font-size:15px">4 vins déjà dans ta cave B&M<small>Fusionnés : les stocks ne sont pas additionnés deux fois</small></div></div></section>
+        <button class="btn wide" data-doimport>Importer 142 vins</button>`;
+    };
+    sh.addEventListener('click', e => {
+      if (e.target.closest('[data-files]')) { step = 2; draw(); }
+      if (e.target.closest('[data-doimport]')) { close(); snack('142 vins importés · 318 bouteilles · 96 dégustations'); }
+    });
+    draw();
+  }
+
+  function moreSheet() {
+    sheet(`<div class="opts">
+      <button class="opt" data-soon2>${ic('pen')}<span>Modifier la fiche<small>Domaine, millésime, fenêtre, cépages, prix…</small></span></button>
+      <button class="opt" data-soon2>${ic('heart')}<span>Mettre dans les envies<small>Pour en racheter</small></span></button>
+      <button class="opt" data-soon2 style="color:var(--warn)">${ic('trash', 'style="color:var(--warn)"')}<span>Supprimer le vin<small>Avec Annuler pendant quelques secondes</small></span></button></div>`);
+  }
+
+  // ---------- Événements ----------
+  $('#phone').addEventListener('input', e => { if (e.target.id === 'q') { state.q = e.target.value; const pos = e.target.selectionStart; render(); const i = $('#q'); i.focus(); i.setSelectionRange(pos, pos); } });
+  $('#phone').addEventListener('click', e => {
+    const t = e.target; let b;
+    if ($('#layer').contains(t)) {
+      if (t.matches('.overlay[data-close]') || t.closest('[data-x]')) close();
+      if ((b = t.closest('[data-open]'))) { close(); state.id = b.dataset.open; render(); $('#scroll').scrollTop = 0; }
+      if (t.closest('[data-soon2]')) { close(); snack('Pas dans cette maquette.'); }
+      return;
+    }
+    if ((b = t.closest('[data-view]'))) { state.view = b.dataset.view; render(); }
+    else if ((b = t.closest('[data-cmode]'))) { state.caveMode = b.dataset.cmode; render(); }
+    else if ((b = t.closest('[data-shelf]'))) { const [l, c] = b.dataset.shelf.split('|'); shelfSheet(l, c); }
+    else if ((b = t.closest('[data-open]'))) { state.id = b.dataset.open; render(); $('#scroll').scrollTop = 0; }
+    else if (t.closest('[data-home]')) { state.id = null; render(); }
+    else if (t.closest('[data-add]')) addSheet();
+    else if (t.closest('[data-import]')) importSheet();
+    else if (t.closest('[data-openbottle]')) openBottle();
+    else if (t.closest('[data-more]')) moreSheet();
+    else if (t.closest('[data-outside]')) snack('Bu ailleurs : la fiche garde la note, le lieu et la photo.');
+    else if ((b = t.closest('[data-bought]'))) { const w = ENVIES.splice(+b.dataset.bought, 1)[0]; render(); snack(`« ${w.dom} » rangé en cave (quantité et clayette à choisir)`); }
+    else if ((b = t.closest('[data-recipe]'))) snack(`Ouvrirait « ${b.dataset.recipe} » dans Recettes.`);
+    else if (t.closest('[data-editwin]')) snack('Ouvrirait la saisie des années de début et de fin.');
+    else if (t.closest('[data-move]')) snack('Ouvrirait le choix du lieu, de la clayette et du nombre de bouteilles.');
+    else if ((b = t.closest('[data-other]'))) snack(`L’onglet ${b.dataset.other} n’est pas dans cette maquette.`);
+    else if (t.closest('[data-soon]')) snack('Les Réglages ne sont pas dans cette maquette.');
+  });
+
+  render();
+})();
+</script>

@@ -126,15 +126,27 @@ ${input.text}`;
 
 /** Envoie l'image (data URL) ou le texte, et renvoie la recette lue. */
 export async function readRecipe(key: string, input: string | RecipeInput, opts: { fetch?: Fetch; signal?: AbortSignal } = {}): Promise<Recipe> {
+  const what: RecipeInput = typeof input === 'string' ? { image: input } : input;
+  return normalizeRecipe(await askJson<Recipe>(key, (model, withReasoning) => buildRequest(model, what, withReasoning), opts));
+}
+
+/**
+ * Appel Chat Completions à réponse JSON imposée (recettes, étiquettes de vin) : choisit le modèle, réessaie sans
+ * réglage de raisonnement si le modèle le refuse, et traduit les erreurs.
+ */
+export async function askJson<T>(
+  key: string,
+  request: (model: string, withReasoning: boolean) => object,
+  opts: { fetch?: Fetch; signal?: AbortSignal } = {},
+): Promise<T> {
   const f = opts.fetch ?? fetch;
   const k = key.trim();
-  const what: RecipeInput = typeof input === 'string' ? { image: input } : input;
   const model = await pickModel(k, f, opts.signal);
   const post = (withReasoning: boolean) =>
     f(`${API}/chat/completions`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${k}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildRequest(model, what, withReasoning)),
+      body: JSON.stringify(request(model, withReasoning)),
       signal: opts.signal,
     });
 
@@ -151,7 +163,7 @@ export async function readRecipe(key: string, input: string | RecipeInput, opts:
   };
   const msg = body.choices?.[0]?.message;
   if (!msg?.content) throw new RecipeError('empty', msg?.refusal ? `OpenAI a refusé : ${msg.refusal}` : 'OpenAI n’a rien renvoyé.');
-  return normalizeRecipe(JSON.parse(msg.content) as Recipe);
+  return JSON.parse(msg.content) as T;
 }
 
 export function normalizeRecipe(r: Recipe): Recipe {
@@ -188,7 +200,7 @@ async function call(doFetch: () => Promise<Response>): Promise<Response> {
     res = await doFetch();
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') throw new RecipeError('aborted', 'Annulé.');
-    throw new RecipeError('network', 'Pas de connexion : la lecture des recettes a besoin d’internet.');
+    throw new RecipeError('network', 'Pas de connexion : la lecture par ChatGPT a besoin d’internet.');
   }
   if (res.ok) return res;
   let detail = '';

@@ -4,6 +4,8 @@ import { Icon } from '../components/Icon';
 import { Sheet } from '../components/Sheet';
 import { TAB_LABELS } from '../router';
 import { closeTuto, tutoOpen } from './state';
+import { BottleArt } from '../screens/cave/bits';
+import '../styles/cave.css';
 
 // Panneau de visite. Chaque étape a une petite illustration dessinée avec les classes de l'app et des données
 // inventées ; elle est inerte (rien n'y est cliquable).
@@ -22,7 +24,60 @@ const row = (rc: string, name: string, qty: string, done = false) => (
   </div>
 );
 
+const wrow = (color: 'rouge' | 'blanc' | 'bulles', name: string, meta: string, n: string, win: string, cls = 'plain') => (
+  <div class="wrow" style="padding:6px 4px;border:0">
+    <span class="bottle">
+      <BottleArt color={color} />
+    </span>
+    <span class="t">
+      <b>{name}</b>
+      <span class="meta">{meta}</span>
+    </span>
+    <span class="side">
+      <span class="n">{n}</span>
+      <span class={`wtag ${cls}`}>{win}</span>
+    </span>
+  </div>
+);
+
 const ILLUS: Record<string, () => JSX.Element> = {
+  'cave.boire': () => (
+    <div>
+      <div class="sec-h late" style="padding:4px 4px 2px">
+        <h2 style="font-size:16px">Fenêtre dépassée</h2>
+      </div>
+      {wrow('rouge', 'Domaine Combier', '2018 · Crozes-Hermitage', '×3', '2022–2025', 'late')}
+      <div class="sec-h" style="padding:4px 4px 2px">
+        <h2 style="font-size:16px">À boire en 2026</h2>
+      </div>
+      {wrow('blanc', 'Domaine du Closel', '2019 · Savennières', '×2', '2022–2026')}
+    </div>
+  ),
+  'cave.sortir': () => (
+    <div class="opts tight">
+      <div class="opt">
+        <Icon name="glass" />
+        <span>Bue à la maison</span>
+      </div>
+      <div class="opt">
+        <Icon name="gift" />
+        <span>Offerte</span>
+      </div>
+      <div class="opt">
+        <Icon name="alert" />
+        <span>Bouchonnée ou abîmée</span>
+      </div>
+    </div>
+  ),
+  'cave.ajout': () => (
+    <div class="estbox" style="gap:6px">
+      <div class="h">
+        <span>Estimations ChatGPT</span>
+        <span class="wtag est">à vérifier</span>
+      </div>
+      {wrow('bulles', 'Champagne Bérêche', 'NM · Champagne', '×2', '2025–2027', 'est')}
+    </div>
+  ),
   'courses.listes': () => (
     <div class="tabs" style="border:0;padding:0">
       <span class="tab" aria-selected="true">

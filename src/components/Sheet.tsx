@@ -65,11 +65,22 @@ export function Sheet({
   useEffect(() => {
     const entry: Entry = { close: () => closeRef.current(), popped: false };
     stack.push(entry);
-    history.pushState({ sheet: true }, '');
+    let alive = true;
+    let pushed = false;
+    const push = () => {
+      if (!alive) return;
+      history.pushState({ sheet: true }, '');
+      pushed = true;
+    };
+    // Un panneau qui en remplace un autre (« ⋯ » puis « Modifier ») attend que le précédent ait retiré son entrée :
+    // sinon ce « retour » en attente emporterait la sienne, et le fermer ensuite ferait quitter la fiche.
+    if (ownBacks > 0) settled.push(push);
+    else push();
     return () => {
+      alive = false;
       const i = stack.indexOf(entry);
       if (i >= 0) stack.splice(i, 1);
-      if (!entry.popped) {
+      if (!entry.popped && pushed) {
         ownBacks++;
         history.back();
       }
