@@ -27,7 +27,7 @@ export class RecipeError extends Error {
   }
 }
 
-const PROMPT = `Tu lis la photo d'une recette (livre, fiche, capture d'écran) pour préparer une liste de courses en français.
+const PROMPT = `Tu lis une recette (photo de livre, fiche, capture d'écran, ou texte d'une page web) pour préparer une liste de courses en français.
 Renvoie :
 - title : le titre de la recette (ou une courte description si absent).
 - servings : le nombre de portions/personnes indiqué, sinon null.
@@ -83,7 +83,19 @@ export async function pickModel(key: string, f: Fetch = fetch, signal?: AbortSig
   return model;
 }
 
-export function buildRequest(model: string, imageDataUrl: string, withReasoning = true) {
+/** Ce qu'on fait lire : une photo (data URL) ou le texte d'une page de recette. */
+export type RecipeInput = { image: string } | { text: string };
+
+export function buildRequest(model: string, input: RecipeInput, withReasoning = true) {
+  const user =
+    'image' in input
+      ? [
+          { type: 'text', text: 'Voici la recette.' },
+          { type: 'image_url', image_url: { url: input.image, detail: 'high' } },
+        ]
+      : `Voici le texte d'une page de recette :
+
+${input.text}`;
   return {
     model,
     ...(withReasoning && model.startsWith('gpt-5') ? { reasoning_effort: 'minimal' } : {}),
@@ -91,27 +103,22 @@ export function buildRequest(model: string, imageDataUrl: string, withReasoning 
     response_format: { type: 'json_schema', json_schema: SCHEMA },
     messages: [
       { role: 'system', content: PROMPT },
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: 'Voici la recette.' },
-          { type: 'image_url', image_url: { url: imageDataUrl, detail: 'high' } },
-        ],
-      },
+      { role: 'user', content: user },
     ],
   };
 }
 
-/** Envoie l'image et renvoie la recette lue. */
-export async function readRecipe(key: string, imageDataUrl: string, opts: { fetch?: Fetch; signal?: AbortSignal } = {}): Promise<Recipe> {
+/** Envoie l'image (data URL) ou le texte, et renvoie la recette lue. */
+export async function readRecipe(key: string, input: string | RecipeInput, opts: { fetch?: Fetch; signal?: AbortSignal } = {}): Promise<Recipe> {
   const f = opts.fetch ?? fetch;
   const k = key.trim();
+  const what: RecipeInput = typeof input === 'string' ? { image: input } : input;
   const model = await pickModel(k, f, opts.signal);
   const post = (withReasoning: boolean) =>
     f(`${API}/chat/completions`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${k}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildRequest(model, imageDataUrl, withReasoning)),
+      body: JSON.stringify(buildRequest(model, what, withReasoning)),
       signal: opts.signal,
     });
 

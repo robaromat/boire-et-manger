@@ -26,7 +26,7 @@ Décisions issues du grill du 18-19/11/2026.
 Chaque carnet est utilisable dès sa livraison. Une maquette cliquable est validée avant le développement de
 chaque carnet.
 
-### Phase 0 — Passage à Boire & Manger
+### Phase 0 — Passage à Boire & Manger ✅ (19/11/2026)
 - ✅ Maquette de la coque validée le 19/11/2026 (https://claude.ai/artifact/Ji5NLeyeSvYSXSKyNRRqEQ).
 - Renommer les dépôts : `courses` → `boire-et-manger`, `courses-data` → `boire-et-manger-data`
   (le jeton fine-grained de Robin suit le renommage). Nouvelle adresse
@@ -37,7 +37,7 @@ chaque carnet.
 - Coque : barre d'onglets, règle des 24 h, Réglages communs, moteur du tuto.
 - Manifeste « Boire & Manger » / « B&M », icônes.
 
-### Phase 1 — Courses v1.0
+### Phase 1 — Courses v1.0 ✅ (20/11/2026)
 - Bouton 📷 Recette (code de l'étape 4 déjà écrit : photo ou lien → revue → ajout), case
   « Garder dans le carnet de recettes » branchée en phase 2.
 - PWA hors ligne (service worker, installation), finitions, essais sur le Fold.

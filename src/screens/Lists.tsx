@@ -14,6 +14,8 @@ import { navigate } from '../router';
 import { engine, mutate } from '../sync/store';
 import { ItemSheet } from './ItemSheet';
 import { ListSheet } from './ListSheet';
+import { RecipeSheet } from './RecipeSheet';
+import { consumeSharedLink, sharedLink } from '../share';
 
 // Écran principal (maquette v1) : onglets magasins, articles rangés par rayon, panier, saisie rapide en bas.
 
@@ -43,7 +45,12 @@ function mutateWithUndo(fn: (d: DataFile) => DataFile, text: string) {
   if (before) showSnack(text, () => mutate(() => before));
 }
 
-type SheetState = { kind: 'item'; id: string } | { kind: 'newList' } | { kind: 'list'; id: string } | null;
+type SheetState =
+  | { kind: 'item'; id: string }
+  | { kind: 'newList' }
+  | { kind: 'list'; id: string }
+  | { kind: 'recipe'; link?: string }
+  | null;
 
 export function Lists() {
   const e = engine.value;
@@ -62,6 +69,14 @@ export function Lists() {
     writeLocal(LAST_LIST_KEY, id);
     mainRef.current?.scrollTo({ top: 0 });
   };
+
+  // Lien de recette reçu par le menu Partager : on ouvre la lecture dès que les listes sont là.
+  const shared = sharedLink.value;
+  useEffect(() => {
+    if (!shared || !d?.lists.length) return;
+    consumeSharedLink();
+    setSheet({ kind: 'recipe', link: shared });
+  }, [shared, !!d?.lists.length]);
 
   // Met en évidence les articles qui viennent d'être ajoutés, et les fait défiler à l'écran.
   useEffect(() => {
@@ -181,51 +196,80 @@ export function Lists() {
         </button>
       </div>
 
-      <div class="shop-main" ref={mainRef}>
-        {!todo.length && (
-          <div class="empty">
-            <b>{done.length ? 'Tout est dans le panier' : 'Liste vide'}</b>
-            {done.length ? 'Touche « Courses terminées » une fois passé en caisse.' : 'Ajoute un article en bas, ou touche un habituel.'}
-          </div>
-        )}
-        {d.rayonOrder.map((r) => {
-          const g = todo.filter((i) => i.rayon === r);
-          if (!g.length) return null;
-          return (
-            <section key={r} aria-label={RAYONS[r]}>
-              <h2 class="rayon-h" style={`--rc:var(--r-${r})`}>
-                {RAYONS[r]} <span class="c">{g.length}</span>
-              </h2>
-              {rows(g)}
-            </section>
-          );
-        })}
-        {done.length > 0 && (
-          <section class={`cart${cartOpen ? '' : ' closed'}`} aria-label="Dans le panier">
-            <div class="cart-h">
-              <button
-                class="cart-toggle"
-                aria-expanded={cartOpen}
-                onClick={() => {
-                  writeLocal(CART_OPEN_KEY, cartOpen ? '0' : '1');
-                  setCartOpen(!cartOpen);
-                }}
-              >
-                <Icon name="down" />
-                Dans le panier ({done.length})
-              </button>
-              <button class="btn primary" onClick={finish}>
-                Courses terminées
-              </button>
+      <div class="main-wrap">
+        <div class="shop-main" ref={mainRef}>
+          {!todo.length && (
+            <div class="empty">
+              <b>{done.length ? 'Tout est dans le panier' : 'Liste vide'}</b>
+              {done.length ? 'Touche « Courses terminées » une fois passé en caisse.' : 'Ajoute un article en bas, ou touche un habituel.'}
             </div>
-            {cartOpen && rows(done)}
-          </section>
-        )}
+          )}
+          {d.rayonOrder.map((r) => {
+            const g = todo.filter((i) => i.rayon === r);
+            if (!g.length) return null;
+            return (
+              <section key={r} aria-label={RAYONS[r]}>
+                <h2 class="rayon-h" style={`--rc:var(--r-${r})`}>
+                  {RAYONS[r]} <span class="c">{g.length}</span>
+                </h2>
+                {rows(g)}
+              </section>
+            );
+          })}
+          {done.length > 0 && (
+            <section class={`cart${cartOpen ? '' : ' closed'}`} aria-label="Dans le panier">
+              <div class="cart-h">
+                <button
+                  class="cart-toggle"
+                  aria-expanded={cartOpen}
+                  onClick={() => {
+                    writeLocal(CART_OPEN_KEY, cartOpen ? '0' : '1');
+                    setCartOpen(!cartOpen);
+                  }}
+                >
+                  <Icon name="down" />
+                  Dans le panier ({done.length})
+                </button>
+                <button class="btn primary" onClick={finish}>
+                  Courses terminées
+                </button>
+              </div>
+              {cartOpen && rows(done)}
+            </section>
+          )}
+        </div>
+        <button class="fab" onClick={() => setSheet({ kind: 'recipe' })}>
+          <Icon name="camera" />
+          Recette
+        </button>
       </div>
 
       <AddBar data={d} list={list} onAdd={add} />
       <Snack />
 
+      {sheet?.kind === 'recipe' && (
+        <RecipeSheet
+          data={d}
+          listId={list.id}
+          initialLink={sheet.link}
+          onClose={() => setSheet(null)}
+          onAdd={(destId, entries, title) => {
+            const dest = d.lists.find((l) => l.id === destId);
+            let ids: string[] = [];
+            mutateWithUndo(
+              (cur) => {
+                const r = addEntries(cur, destId, entries);
+                ids = r.ids;
+                return r.data;
+              },
+              `${plural(entries.length, 'article')} de « ${title} » ${entries.length > 1 ? 'ajoutés' : 'ajouté'} à ${dest?.name ?? ''}`,
+            );
+            setSheet(null);
+            if (destId !== list.id) selectList(destId);
+            setFlashIds(ids);
+          }}
+        />
+      )}
       {sheet?.kind === 'item' && (
         <ItemSheet
           data={d}

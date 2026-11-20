@@ -6,6 +6,8 @@ import { TABS, TAB_LABELS, openTab, type TabId } from '../router';
 import { hasPending, maybeOpenTuto, tutoSeen } from '../tuto/state';
 import { TutoSheet } from '../tuto/TutoSheet';
 import { Lists } from './Lists';
+import { applyUpdate, updateReady } from '../pwa';
+import { sharedLink } from '../share';
 
 // Coque de Boire & Manger : le carnet ouvert, et la barre des 4 onglets en bas.
 // Chaque carnet a sa couleur d'accent (styles/shell.css, selon data-tab).
@@ -13,7 +15,10 @@ import { Lists } from './Lists';
 const ICONS: Record<TabId, IconName> = { courses: 'cart', recettes: 'book', cave: 'bottle', souvenirs: 'pin' };
 
 export function Shell({ tab }: { tab: TabId }) {
-  useEffect(() => maybeOpenTuto(tab), [tab]);
+  // Pas de visite par-dessus une recette reçue par le menu Partager : elle attendra le prochain passage.
+  useEffect(() => {
+    if (!sharedLink.value) maybeOpenTuto(tab);
+  }, [tab]);
   void tutoSeen.value; // redessine les pastilles « nouveau » après la visite
 
   return (
@@ -31,6 +36,15 @@ export function Shell({ tab }: { tab: TabId }) {
         ))}
       </nav>
       <TutoSheet />
+      {updateReady.value && (
+        <div class="update" role="status">
+          <span>Nouvelle version de l'app disponible.</span>
+          <button class="btn small primary" onClick={applyUpdate}>
+            <Icon name="refresh" />
+            Mettre à jour
+          </button>
+        </div>
+      )}
     </div>
   );
 }

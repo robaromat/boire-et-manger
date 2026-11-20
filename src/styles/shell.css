@@ -53,3 +53,13 @@
 
 /* Réglages : revoir les tutos */
 .tuto-rows { display: grid; gap: 8px; }
+
+/* Bandeau « nouvelle version » */
+.update {
+  position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 40;
+  display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 12px; background: var(--card);
+  border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); font-size: 14px; width: max-content; max-width: calc(100% - 32px);
+}
+.tuto-recette { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tuto-recette .chip { background: var(--card); }
+.tuto-recette .tuto-fab { position: static; margin-left: auto; height: 46px; box-shadow: none; }

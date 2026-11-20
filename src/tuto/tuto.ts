@@ -47,6 +47,13 @@ export const TUTO_STEPS: TutoStep[] = [
     title: 'Le panier',
     text: "Coche un article : il descend dans « Dans le panier ». En caisse, « Courses terminées » vide le panier et compte tes achats, ce qui nourrit les habituels.",
   },
+  {
+    id: 'courses.recette',
+    tab: 'courses',
+    since: '2026-11-20',
+    title: 'Une recette, ses ingrédients',
+    text: "Le bouton Recette lit une photo, une capture d'écran ou le lien d'une page. Tu choisis les portions, tu décoches ce que tu as déjà, et les ingrédients rejoignent la liste. Tu peux aussi partager une page de recette vers l'app depuis Chrome.",
+  },
 ];
 
 /** Étapes à montrer pour un onglet : jamais vues, ou vues avant leur dernière mise à jour. */

@@ -45,7 +45,7 @@ describe('lecture par OpenAI', () => {
   });
 
   it('pas de réglage de raisonnement pour les modèles qui ne le connaissent pas', () => {
-    expect(buildRequest('gpt-4.1-mini', 'x')).not.toHaveProperty('reasoning_effort');
+    expect(buildRequest('gpt-4.1-mini', { image: 'x' })).not.toHaveProperty('reasoning_effort');
   });
 
   it('réessaie sans raisonnement si le modèle le refuse', async () => {
@@ -109,5 +109,33 @@ describe('revue', () => {
   it('portions inconnues : quantités telles quelles', () => {
     const lines = reviewLines(data([list('bio')]), 'bio', { ...RECIPE, servings: null }, 3);
     expect(lines[0]!.qty).toEqual([{ n: 800, u: 'g' }]);
+  });
+});
+
+describe('recette depuis un lien', () => {
+  it('fiche Recipe dans un @graph, entités HTML décodées', async () => {
+    const { extractJsonLdRecipe, jsonLdToText } = await import('./link');
+    const html = `<html><script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage"},
+      {"@type":["Recipe"],"name":"Curry &amp; riz","recipeYield":["4","4 personnes"],"recipeIngredient":["800 g de pois chiches","<b>2</b> oignons"]}]}</script></html>`;
+    const r = extractJsonLdRecipe(html)!;
+    expect(r).toEqual({ name: 'Curry & riz', yield: '4 / 4 personnes', ingredients: ['800 g de pois chiches', '2 oignons'] });
+    expect(jsonLdToText(r)).toContain('- 2 oignons');
+  });
+
+  it('page sans fiche, ou JSON cassé : rien', async () => {
+    const { extractJsonLdRecipe } = await import('./link');
+    expect(extractJsonLdRecipe('<script type="application/ld+json">{"@type":"WebSite"}</script><script type="application/ld+json">{oups</script>')).toBeNull();
+  });
+
+  it('adresse reconnue dans un texte partagé', async () => {
+    const { normalizeUrl } = await import('./link');
+    expect(normalizeUrl('Regarde ça https://www.marmiton.org/recettes/x.aspx ')).toBe('https://www.marmiton.org/recettes/x.aspx');
+    expect(normalizeUrl('www.750g.com/quiche')).toBe('https://www.750g.com/quiche');
+    expect(normalizeUrl('pas un lien')).toBeNull();
+  });
+
+  it('le texte part sans image', () => {
+    const req = buildRequest('gpt-4.1-mini', { text: 'Titre : Quiche' });
+    expect(req.messages[1]!.content).toContain('Titre : Quiche');
   });
 });

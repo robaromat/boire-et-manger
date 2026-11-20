@@ -58,6 +58,17 @@ const ILLUS: Record<string, () => JSX.Element> = {
       </div>
     </div>
   ),
+  'courses.recette': () => (
+    <div class="tuto-recette">
+      <span class="chip">Photo</span>
+      <span class="chip">Galerie</span>
+      <span class="chip">Lien</span>
+      <span class="fab tuto-fab">
+        <Icon name="camera" />
+        Recette
+      </span>
+    </div>
+  ),
   'courses.panier': () => (
     <div>
       {row('cre', 'Œufs', '×6', true)}

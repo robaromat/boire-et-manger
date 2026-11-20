@@ -5,37 +5,66 @@ import type { Entry } from '../model/lists';
 import { formatQty } from '../model/qty';
 import { RAYONS, type DataFile } from '../model/types';
 import { imageToDataUrl } from '../recipe/image';
+import { LinkError, fetchRecipeText, normalizeUrl } from '../recipe/link';
 import { RecipeError, readRecipe, type Recipe } from '../recipe/read';
 import { linesToEntries, reviewLines } from '../recipe/review';
 import { navigate } from '../router';
 import { settings } from '../settings/settings';
 
-// Recette en photo : choisir l'image → lecture par ChatGPT → revue (portions, cases, liste de destination) → ajout.
+// Recette en photo ou par lien : choisir l'image (ou coller l'adresse) → lecture par ChatGPT → revue (portions, cases, liste de destination) → ajout.
 // Un seul panneau pour tout le parcours (le bouton Retour le ferme à n'importe quelle étape).
 
 type Phase =
   | { kind: 'pick'; error?: string }
-  | { kind: 'loading'; preview: string }
+  | { kind: 'loading'; preview: string | null; what: string }
   | { kind: 'review'; recipe: Recipe };
 
 export function RecipeSheet(props: {
   data: DataFile;
   listId: string;
+  /** Lien reçu par le menu Partager d'une autre app : la lecture démarre tout de suite. */
+  initialLink?: string;
   onClose: () => void;
   onAdd: (destId: string, entries: Entry[], title: string) => void;
 }) {
   const key = settings.value.openaiKey;
   const [phase, setPhase] = useState<Phase>({ kind: 'pick' });
+  const [link, setLink] = useState(props.initialLink ?? '');
   const abort = useRef<AbortController | null>(null);
 
-  useEffect(() => () => abort.current?.abort(), []);
+  useEffect(() => {
+    if (props.initialLink && key) void onLink(props.initialLink);
+    return () => abort.current?.abort();
+  }, []);
+
+  const fail = (e: unknown) =>
+    setPhase({
+      kind: 'pick',
+      error: e instanceof RecipeError || e instanceof LinkError ? e.message : 'Lecture impossible : ' + String(e),
+    });
+
+  const onLink = async (raw: string) => {
+    const url = normalizeUrl(raw);
+    if (!url) return setPhase({ kind: 'pick', error: 'Colle l’adresse complète de la page (elle commence par https://).' });
+    setPhase({ kind: 'loading', preview: null, what: new URL(url).hostname.replace(/^www\./, '') });
+    const ctrl = new AbortController();
+    abort.current = ctrl;
+    try {
+      const page = await fetchRecipeText(url);
+      if (ctrl.signal.aborted) return;
+      const recipe = await readRecipe(key, { text: page.text }, { signal: ctrl.signal });
+      if (!ctrl.signal.aborted) setPhase({ kind: 'review', recipe });
+    } catch (e) {
+      if (!ctrl.signal.aborted) fail(e);
+    }
+  };
 
   const onFile = async (input: HTMLInputElement) => {
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
     const preview = URL.createObjectURL(file);
-    setPhase({ kind: 'loading', preview });
+    setPhase({ kind: 'loading', preview, what: 'photo' });
     const ctrl = new AbortController();
     abort.current = ctrl;
     try {
@@ -43,8 +72,7 @@ export function RecipeSheet(props: {
       const recipe = await readRecipe(key, url, { signal: ctrl.signal });
       if (!ctrl.signal.aborted) setPhase({ kind: 'review', recipe });
     } catch (e) {
-      if (ctrl.signal.aborted) return;
-      setPhase({ kind: 'pick', error: e instanceof RecipeError ? e.message : 'Lecture impossible : ' + String(e) });
+      if (!ctrl.signal.aborted) fail(e);
     } finally {
       URL.revokeObjectURL(preview);
     }
@@ -75,7 +103,7 @@ export function RecipeSheet(props: {
     return (
       <Sheet onClose={props.onClose} label="Lecture de la recette" full>
         <div class="loading" role="status">
-          <img src={phase.preview} alt="Photo de la recette" />
+          {phase.preview ? <img src={phase.preview} alt="Photo de la recette" /> : <p class="note">{phase.what}</p>}
           <div class="spinner" aria-hidden="true" />
           <div>
             <b>ChatGPT lit la recette…</b>
@@ -127,7 +155,33 @@ export function RecipeSheet(props: {
           <input type="file" accept="image/*" hidden onChange={(e) => void onFile(e.currentTarget)} />
         </label>
       </div>
-      <p class="note">L'image est envoyée à OpenAI pour être lue, puis tu vérifies tout avant l'ajout. Environ 1 centime par recette.</p>
+      <form
+        class="field"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void onLink(link);
+        }}
+      >
+        <label for="r-link">Ou coller le lien d'une recette</label>
+        <div class="addform">
+          <input
+            id="r-link"
+            type="url"
+            inputMode="url"
+            enterKeyHint="go"
+            placeholder="https://www.marmiton.org/…"
+            value={link}
+            onInput={(e) => setLink(e.currentTarget.value)}
+          />
+          <button type="submit" aria-label="Lire la recette" disabled={!link.trim()}>
+            <Icon name="check" />
+          </button>
+        </div>
+      </form>
+      <p class="note">
+        La photo ou la page est envoyée à OpenAI pour être lue (une page passe d'abord par le relais r.jina.ai), puis tu vérifies
+        tout avant l'ajout. Environ 1 centime par recette. Instagram et TikTok : fais plutôt une capture d'écran.
+      </p>
     </Sheet>
   );
 }

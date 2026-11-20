@@ -3,8 +3,29 @@ import { useEffect, useRef } from 'preact/hooks';
 
 /**
  * Panneau qui monte du bas de l'écran. Le bouton Retour d'Android le ferme (au lieu de quitter l'app) :
- * on empile une entrée d'historique à l'ouverture et on la retire à la fermeture.
+ * chaque panneau ouvert empile une entrée d'historique, retirée à sa fermeture.
+ * Plusieurs panneaux peuvent être ouverts en même temps (le tuto par-dessus une recette partagée, par exemple) :
+ * Retour et Échap ne ferment que celui du dessus, et le « retour » qu'on déclenche nous-mêmes en fermant un panneau
+ * ne doit pas fermer les autres.
  */
+type Entry = { close: () => void; popped: boolean };
+const stack: Entry[] = [];
+let ownBacks = 0;
+
+window.addEventListener('popstate', () => {
+  if (ownBacks > 0) {
+    ownBacks--;
+    return;
+  }
+  const top = stack[stack.length - 1];
+  if (!top) return;
+  top.popped = true;
+  top.close();
+});
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') stack[stack.length - 1]?.close();
+});
+
 export function Sheet({
   onClose,
   label,
@@ -20,19 +41,16 @@ export function Sheet({
   closeRef.current = onClose;
 
   useEffect(() => {
-    let poppedByBack = false;
+    const entry: Entry = { close: () => closeRef.current(), popped: false };
+    stack.push(entry);
     history.pushState({ sheet: true }, '');
-    const onPop = () => {
-      poppedByBack = true;
-      closeRef.current();
-    };
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current();
-    window.addEventListener('popstate', onPop);
-    window.addEventListener('keydown', onKey);
     return () => {
-      window.removeEventListener('popstate', onPop);
-      window.removeEventListener('keydown', onKey);
-      if (!poppedByBack && (history.state as { sheet?: boolean } | null)?.sheet) history.back();
+      const i = stack.indexOf(entry);
+      if (i >= 0) stack.splice(i, 1);
+      if (!entry.popped) {
+        ownBacks++;
+        history.back();
+      }
     };
   }, []);
 

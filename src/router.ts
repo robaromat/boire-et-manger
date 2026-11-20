@@ -27,6 +27,7 @@ export function hrefOf(r: Route): string {
 function initialRoute(): Route {
   const bare = location.hash.replace(/^#\/?/, '') === '';
   if (!bare) return parseHash(location.hash);
+  if (/[?&](url|text)=/.test(location.search)) return { name: 'tab', tab: 'courses' }; // lien partagé : recette → Courses
   const r: Route = { name: 'tab', tab: startTab() };
   if (r.tab !== 'courses') history.replaceState(history.state, '', hrefOf(r));
   return r;

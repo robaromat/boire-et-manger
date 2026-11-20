@@ -1,0 +1,28 @@
+{
+  "id": "/boire-et-manger/",
+  "name": "Boire & Manger",
+  "short_name": "B&M",
+  "description": "Mes courses, recettes, cave et souvenirs de table.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/boire-et-manger/",
+  "scope": "/boire-et-manger/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F2EEE3",
+  "theme_color": "#2C6A49",
+  "categories": ["food", "lifestyle", "shopping"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "share_target": {
+    "action": "/boire-et-manger/",
+    "method": "GET",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  },
+  "shortcuts": [
+    { "name": "Courses", "short_name": "Courses", "url": "/boire-et-manger/#/", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

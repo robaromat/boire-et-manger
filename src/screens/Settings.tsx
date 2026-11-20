@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon';
 import { SyncBadge } from '../components/SyncBadge';
 import { TABS, TAB_LABELS, back, lastTab, navigate } from '../router';
 import { replayTuto, resetTuto } from '../tuto/state';
+import { installPrompt, isStandalone } from '../pwa';
 import { stepsOf } from '../tuto/tuto';
 import { clearSettings, maskSecret, repoRef, settings, updateSettings } from '../settings/settings';
 import { testConnection, serialize } from '../sync/github';
@@ -262,6 +263,42 @@ function DeviceSection() {
   );
 }
 
+function AppSection() {
+  return (
+    <section class="card">
+      <h2>
+        <Icon name="download" />
+        Application
+      </h2>
+      {isStandalone() ? (
+        <p class="testres ok">Boire & Manger est installée sur cet appareil et fonctionne hors connexion.</p>
+      ) : installPrompt.value ? (
+        <div>
+          <button
+            class="btn primary"
+            onClick={async () => {
+              const p = installPrompt.value;
+              if (!p) return;
+              await p.prompt();
+              await p.userChoice;
+              installPrompt.value = null;
+            }}
+          >
+            <Icon name="download" />
+            Installer sur cet appareil
+          </button>
+        </div>
+      ) : (
+        <p class="lead">
+          Pour l'avoir comme une app (icône « B&M », plein écran, hors connexion) : menu ⋮ de Chrome → « Installer l'application » ou
+          « Ajouter à l'écran d'accueil ».
+        </p>
+      )}
+      <p class="hint">Une fois installée, elle apparaît dans le menu Partager : partage-lui la page d'une recette depuis Chrome.</p>
+    </section>
+  );
+}
+
 function TutoSection() {
   const withSteps = TABS.filter((t) => stepsOf(t).length > 0);
   const [done, setDone] = useState(false);
@@ -314,6 +351,7 @@ export function SettingsScreen() {
         <GitHubSection />
         <OpenAISection />
         <RayonsSection />
+        <AppSection />
         <TutoSection />
         <DeviceSection />
         <p class="version">Boire & Manger v{__APP_VERSION__}</p>
