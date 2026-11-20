@@ -79,7 +79,17 @@ chaque carnet.
 - Import CellarTracker (stock, bouteilles bues, notes) avec écran de revue.
   ⚠ Robin exporte ses données CellarTracker **avant le 14/12/2026** (fin de l'abonnement).
 
-### Phase 4 — Souvenirs
+### Phase 4 — Souvenirs ✅ (20/11/2026, v1.3.0)
+- ✅ Maquette validée le 20/11/2026 (https://claude.ai/artifact/FYPo6QY7AMJNRkLnE4MF2p). Import Mapstr : pas fait
+  (question restée sans réponse).
+- Livré : carnet `souvenirs.json` (fusion lieu par lieu, visites une par une), Carte OpenStreetMap (Leaflet chargé à la
+  demande, fonds tile.openstreetmap.org, assombris en mode sombre), Liste (visite récente / note / distance), Livre (par
+  mois), filtres, fiche lieu (photos, J'y suis allé, Itinéraire et lien Google Maps, Partager, « À reprendre » ou
+  « Pourquoi y aller », adresse + mini-carte, visites), ajout : autour de moi (Overpass, 300 m), par nom (Nominatim,
+  d'abord à ~20 km), depuis une photo (EXIF GPS + date lus sur le téléphone), point posé à la main (adresse par
+  Nominatim reverse) ; vins bus → dégustations « ailleurs » de la Cave (créées, mises à jour, retirées avec la visite).
+- Correction : la visite guidée se rouvrait toute la journée d'une mise à jour (« vu » enregistré sans l'heure).
+- À vérifier sur le téléphone : la position GPS des photos (Android peut la retirer quand on choisit une photo).
 - Fiche par lieu (resto, bar, cave, boulangerie…) + journal de visites (date, photos, note, commentaire,
   avec qui, vins bus liés à la Cave). « À essayer » façon Mapstr.
 - Lieux via OpenStreetMap : autour de moi, recherche par nom, GPS des photos, point posé à la main ;

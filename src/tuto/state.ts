@@ -41,7 +41,8 @@ export function closeTuto(): void {
   const t = tutoOpen.value;
   if (!t) return;
   dismissed.add(t.tab);
-  tutoSeen.value = markSeen(tutoSeen.value, t.steps, new Date().toISOString().slice(0, 10));
+  // Heure comprise : une étape mise à jour plus tard dans la journée redevient « nouvelle », mais pas avant.
+  tutoSeen.value = markSeen(tutoSeen.value, t.steps, new Date().toISOString().slice(0, 16));
   try {
     localStorage.setItem(KEY, JSON.stringify(tutoSeen.value));
   } catch {

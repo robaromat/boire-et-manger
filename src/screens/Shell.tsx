@@ -1,13 +1,13 @@
 import { useEffect } from 'preact/hooks';
 import '../styles/shell.css';
 import { Icon, type IconName } from '../components/Icon';
-import { Topbar } from '../components/Topbar';
 import { TABS, TAB_LABELS, openTab, type TabId } from '../router';
 import { hasPending, maybeOpenTuto, tutoSeen } from '../tuto/state';
 import { TutoSheet } from '../tuto/TutoSheet';
 import { Lists } from './Lists';
 import { Recettes } from './recettes/Recettes';
 import { Cave } from './cave/Cave';
+import { Souvenirs } from './souvenirs/Souvenirs';
 import { applyUpdate, updateReady } from '../pwa';
 import { sharedLink } from '../share';
 
@@ -26,7 +26,7 @@ export function Shell({ tab, sub }: { tab: TabId; sub?: string }) {
   return (
     <div class="shell" data-tab={tab}>
       <div class="shell-body">
-        {tab === 'courses' ? <Lists /> : tab === 'recettes' ? <Recettes openId={sub} /> : tab === 'cave' ? <Cave openId={sub} /> : <Soon tab={tab} />}
+        {tab === 'courses' ? <Lists /> : tab === 'recettes' ? <Recettes openId={sub} /> : tab === 'cave' ? <Cave openId={sub} /> : <Souvenirs openId={sub} />}
       </div>
       <nav class="tabbar" aria-label="Carnets">
         {TABS.map((t) => (
@@ -49,38 +49,6 @@ export function Shell({ tab, sub }: { tab: TabId; sub?: string }) {
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-const SOON: Record<'souvenirs', { phase: number; text: string; items: string[] }> = {
-  souvenirs: {
-    phase: 4,
-    text: 'Tes restaurants, bars et adresses gourmandes, sur une carte et dans un livre de photos.',
-    items: ['Une fiche par lieu et un journal de visites', 'Adresses « à essayer »', 'Carte, liste et livre de photos'],
-  },
-};
-
-function Soon({ tab }: { tab: 'souvenirs' }) {
-  const s = SOON[tab];
-  return (
-    <div class="shop">
-      <Topbar title={TAB_LABELS[tab]} />
-      <div class="shop-main">
-        <div class="soon">
-          <span class="soon-icon">
-            <Icon name={ICONS[tab]} />
-          </span>
-          <h2>Bientôt ici</h2>
-          <p>{s.text}</p>
-          <ul>
-            {s.items.map((x) => (
-              <li key={x}>{x}</li>
-            ))}
-          </ul>
-          <p class="muted">Prévu en phase {s.phase} du plan.</p>
-        </div>
-      </div>
     </div>
   );
 }

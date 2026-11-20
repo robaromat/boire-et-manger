@@ -1,0 +1,671 @@
+<meta charset="utf-8">
+<title>Boire & Manger · Souvenirs</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Maquette du carnet Souvenirs : un téléphone cliquable (écran extérieur du Fold) + colonne « à essayer ».
+   Palette « carnet de marché » de Boire & Manger ; accent bleu ardoise du carnet Souvenirs. */
+:root {
+  --paper: #f2eee3; --card: #fbf9f3; --ink: #1d2620; --muted: #687064; --line: #ddd6c4;
+  --accent: #3d5c7c; --on-accent: #ffffff; --soft: #dde5ee; --warn: #b5483f; --ok: #2c6a49; --wine: #7f2539; --terra: #b0532b;
+  --hi: #d08a1f; --shadow: 0 10px 40px rgba(40, 45, 30, .16);
+  --map-land: #ece6d6; --map-road: #fbf9f3; --map-minor: #f6f2e8; --map-park: #cfdcbc; --map-water: #b7cde0; --map-label: #8a8a7c; --map-block: #e3dccb;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #151815; --card: #1e221e; --ink: #ebe7dc; --muted: #9b9e92; --line: #323830;
+    --accent: #8fb3d8; --on-accent: #0e1a26; --soft: #24303d; --warn: #e5796e; --ok: #74c595; --wine: #e0798f; --terra: #ec9468;
+    --hi: #f0b14d; --shadow: 0 10px 40px rgba(0, 0, 0, .5);
+    --map-land: #1f2420; --map-road: #343a33; --map-minor: #2a302a; --map-park: #2b3a26; --map-water: #22384a; --map-label: #7d8276; --map-block: #262b26;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #151815; --card: #1e221e; --ink: #ebe7dc; --muted: #9b9e92; --line: #323830;
+  --accent: #8fb3d8; --on-accent: #0e1a26; --soft: #24303d; --warn: #e5796e; --ok: #74c595; --wine: #e0798f; --terra: #ec9468;
+  --hi: #f0b14d; --shadow: 0 10px 40px rgba(0, 0, 0, .5);
+  --map-land: #1f2420; --map-road: #343a33; --map-minor: #2a302a; --map-park: #2b3a26; --map-water: #22384a; --map-label: #7d8276; --map-block: #262b26;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+button:disabled { opacity: .45; cursor: default; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.stage { display: flex; gap: 40px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+.notes { max-width: 380px; min-width: 0; padding-top: 12px; display: grid; gap: 16px; }
+.notes h1 { font-family: var(--font-display); font-size: 30px; margin: 0; letter-spacing: -.01em; }
+.notes h2 { font-family: var(--font-display); font-size: 19px; margin: 6px 0 0; }
+.notes p { color: var(--muted); line-height: 1.5; margin: 0; }
+.notes ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.notes li { line-height: 1.45; padding-left: 14px; border-left: 2px solid var(--line); }
+.notes li.q { border-left-color: var(--accent); }
+.notes b { font-weight: 600; }
+
+.phone {
+  position: relative; width: min(100%, 392px); height: min(840px, calc(100dvh - 40px)); min-height: 640px;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 28px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+@media (max-width: 500px) {
+  body { padding-block: 0; padding-left: 0; padding-right: 0; }
+  .phone { width: 100%; border-radius: 0; border: 0; box-shadow: none; height: 100dvh; min-height: 0; }
+  .notes { padding: 0 max(16px, env(safe-area-inset-right, 0px)) 32px max(16px, env(safe-area-inset-left, 0px)); }
+}
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 12px 6px 16px; min-height: 60px; }
+.title { font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; margin: 0; }
+.title::before { content: ""; width: 10px; height: 22px; border-radius: 4px; background: var(--accent); }
+.sync { font-weight: 600; font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; }
+.sync::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.iconbtn { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; color: var(--muted); }
+.iconbtn:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--ink); }
+.main { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.scroll { position: relative; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 96px; }
+.nav { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--card); padding: 6px 4px 8px; }
+.nav button { display: grid; justify-items: center; gap: 2px; padding: 4px 0; font-size: 12px; font-weight: 600; color: var(--muted); }
+.nav .pill { width: 54px; height: 30px; border-radius: 15px; display: grid; place-items: center; }
+.nav button[aria-current="page"] { color: var(--ink); }
+.nav button[aria-current="page"] .pill { background: var(--soft); color: var(--accent); }
+
+/* Vues, recherche, filtres */
+.seg { display: flex; gap: 2px; margin: 2px 12px 8px; padding: 3px; border-radius: 14px; background: color-mix(in srgb, var(--line) 70%, transparent); }
+.seg button { flex: 1; padding: 8px 2px; border-radius: 11px; font-size: 14px; font-weight: 700; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.searchrow { display: flex; gap: 8px; margin: 0 12px 8px; }
+.search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); color: var(--muted); }
+.search input { flex: 1; min-width: 0; border: 0; background: none; font-size: 16px; outline: none; color: var(--ink); }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding: 0 12px 8px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 11px; font-size: 14px; font-weight: 600; }
+.chip .i { width: 16px; height: 16px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip.sep { width: 1px; padding: 0; border: 0; background: var(--line); align-self: stretch; margin: 4px 2px; }
+.sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 14px 16px 6px; }
+.sec-h h2 { margin: 0; font-family: var(--font-display); font-size: 19px; letter-spacing: -.01em; }
+.sec-h span, .sec-h select { font-size: 13px; color: var(--muted); }
+.sec-h select { border: 0; background: none; font-weight: 600; padding: 2px; }
+.meta { font-size: 13px; color: var(--muted); }
+.hint { font-size: 13px; color: var(--muted); padding: 0 16px; line-height: 1.45; }
+.stars { color: var(--accent); letter-spacing: 1px; font-size: 13px; white-space: nowrap; }
+.stars .off { color: var(--line); }
+.fab { position: absolute; right: 14px; bottom: 14px; height: 54px; padding: 0 18px 0 16px; border-radius: 18px; background: var(--ink); color: var(--paper); display: flex; align-items: center; gap: 8px; font-weight: 600; box-shadow: var(--shadow); z-index: 4; transition: transform .2s; }
+.fab.up { transform: translateY(-118px); }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--soft); color: var(--accent); white-space: nowrap; }
+.tag.plain { background: var(--paper); color: var(--ink); border: 1px solid var(--line); font-weight: 600; }
+.tag.todo { background: transparent; border: 1px dashed var(--accent); color: var(--accent); }
+.tag.wine { background: color-mix(in srgb, var(--wine) 14%, var(--card)); color: var(--wine); }
+
+/* Carte (dessinée pour la maquette ; l'app utilisera les fonds OpenStreetMap) */
+.map { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--map-land); border-top: 1px solid var(--line); }
+.map svg.bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map .lbl { font-family: var(--font-body); font-size: 10px; font-weight: 600; fill: var(--map-label); letter-spacing: .04em; }
+.pin { position: absolute; transform: translate(-50%, -100%); display: grid; justify-items: center; z-index: 2; }
+.pin .head { width: 34px; height: 34px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); display: grid; place-items: center; background: var(--accent); color: var(--on-accent); box-shadow: 0 3px 8px rgba(0,0,0,.28); border: 2px solid var(--card); }
+.pin .head .i { transform: rotate(45deg); width: 17px; height: 17px; }
+.pin.todo .head { background: var(--card); color: var(--accent); border: 2px dashed var(--accent); }
+.pin[aria-pressed="true"] .head { width: 42px; height: 42px; background: var(--ink); color: var(--paper); border-color: var(--card); border-style: solid; }
+.pin .name { margin-top: 3px; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: color-mix(in srgb, var(--card) 85%, transparent); white-space: nowrap; }
+.me { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #3b82f6; border: 3px solid #fff; box-shadow: 0 0 0 8px rgba(59,130,246,.22); transform: translate(-50%, -50%); z-index: 1; }
+.mapbtn { position: absolute; right: 12px; top: 12px; width: 44px; height: 44px; border-radius: 14px; background: var(--card); box-shadow: 0 2px 10px rgba(0,0,0,.18); display: grid; place-items: center; color: var(--accent); z-index: 3; }
+.attrib { position: absolute; left: 8px; bottom: 6px; font-size: 10px; color: var(--map-label); z-index: 1; }
+.preview { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 5; background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 10px; display: flex; gap: 12px; align-items: center; text-align: left; border: 1px solid var(--line); }
+.preview .t { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.preview b { font-size: 16px; }
+
+/* Lignes de lieu */
+.prow { display: flex; gap: 12px; align-items: center; padding: 10px 16px; text-align: left; width: 100%; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.prow .t { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.prow b { font-size: 16px; font-weight: 600; line-height: 1.25; }
+.ptile { width: 56px; height: 56px; border-radius: 14px; flex: none; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--h1, var(--accent)), var(--h2, var(--accent))); position: relative; overflow: hidden; }
+.ptile .i { width: 24px; height: 24px; opacity: .9; }
+.ptile.todo { background: var(--soft); color: var(--accent); border: 1.5px dashed var(--accent); }
+.dist { font-variant-numeric: tabular-nums; }
+
+/* Photos simulées : dégradés ; l'app montre les vraies photos */
+.ph { position: relative; border-radius: 12px; overflow: hidden; background: linear-gradient(135deg, var(--h1), var(--h2)); }
+.ph::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.35), transparent 55%); }
+.ph span { position: absolute; left: 6px; bottom: 5px; right: 6px; font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.5); z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Livre */
+.month { padding: 18px 16px 4px; font-family: var(--font-display); font-size: 26px; letter-spacing: -.01em; display: flex; justify-content: space-between; align-items: baseline; }
+.month span { font-family: var(--font-body); font-size: 13px; color: var(--muted); font-weight: 600; }
+.page { margin: 8px 16px 14px; display: grid; gap: 8px; text-align: left; width: calc(100% - 32px); }
+.page .shots { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; height: 220px; }
+.page .shots .ph:first-child { grid-row: span 2; border-radius: 14px 4px 4px 14px; }
+.page .shots .ph:nth-child(2) { border-radius: 4px 14px 4px 4px; }
+.page .shots .ph:nth-child(3) { border-radius: 4px 4px 14px 4px; }
+.page .shots.one { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.page .shots.one .ph:first-child { grid-row: auto; border-radius: 14px; }
+.page .shots.two { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+.page .shots.two .ph:first-child { grid-row: auto; border-radius: 14px 4px 4px 14px; }
+.page .shots.two .ph:nth-child(2) { border-radius: 4px 14px 14px 4px; }
+.page .cap { display: grid; gap: 3px; }
+.page .cap b { font-family: var(--font-display); font-size: 19px; }
+.page .cap p { margin: 0; line-height: 1.45; }
+
+/* Fiche lieu */
+.ftop { position: relative; height: 210px; display: grid; grid-template-columns: 2fr 1fr; gap: 3px; }
+.ftop .ph { border-radius: 0; }
+.ftop.single { grid-template-columns: 1fr; }
+.ftop .side { display: grid; gap: 3px; }
+.ftop .back, .ftop .more { position: absolute; top: 12px; width: 42px; height: 42px; border-radius: 50%; background: color-mix(in srgb, var(--card) 88%, transparent); display: grid; place-items: center; color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.18); z-index: 2; }
+.ftop .back { left: 12px; } .ftop .more { right: 12px; }
+.fiche { padding: 14px 16px 28px; display: grid; gap: 16px; }
+.fiche h1 { margin: 0; font-family: var(--font-display); font-size: 26px; line-height: 1.15; letter-spacing: -.01em; text-wrap: balance; }
+.chipsline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.statline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+.statline .stars { font-size: 16px; }
+.acts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.act { display: grid; justify-items: center; gap: 4px; padding: 10px 4px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); font-size: 13px; font-weight: 600; text-align: center; }
+.act .i { color: var(--accent); }
+.act.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.act.primary .i { color: var(--on-accent); }
+.reco { border-radius: 14px; padding: 12px 14px; background: color-mix(in srgb, var(--hi) 14%, var(--card)); border: 1px solid color-mix(in srgb, var(--hi) 40%, var(--line)); display: grid; gap: 4px; text-align: left; width: 100%; }
+.reco small { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+.reco p { margin: 0; line-height: 1.45; }
+.why { border-radius: 14px; padding: 12px 14px; border: 1.5px dashed var(--accent); display: grid; gap: 4px; }
+.block h2 { margin: 0 0 8px; font-family: var(--font-display); font-size: 19px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.addr { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; }
+.mini { height: 84px; border-radius: 12px; overflow: hidden; position: relative; background: var(--map-land); border: 1px solid var(--line); }
+.mini svg { width: 100%; height: 100%; display: block; }
+.mini .dotpin { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 2px solid var(--card); transform: translate(-50%, -50%); }
+.linkbtn { color: var(--accent); font-weight: 600; display: inline-flex; gap: 5px; align-items: center; }
+.linkbtn .i { width: 16px; height: 16px; }
+.visits { display: grid; gap: 10px; }
+.visit { padding: 12px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); display: grid; gap: 8px; }
+.visit .hd { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.visit p { margin: 0; line-height: 1.45; }
+.thumbs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.thumbs .ph { width: 76px; height: 76px; flex: none; }
+.winechips { display: flex; gap: 6px; flex-wrap: wrap; }
+.winechip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: color-mix(in srgb, var(--wine) 12%, var(--card)); color: var(--wine); border: 1px solid color-mix(in srgb, var(--wine) 30%, var(--line)); }
+.winechip .i { width: 15px; height: 15px; }
+
+/* Feuilles */
+.overlay { position: absolute; inset: 0; background: rgba(15, 20, 15, .42); z-index: 20; display: flex; align-items: flex-end; }
+.sheet { width: 100%; max-height: 90%; overflow-y: auto; background: var(--card); border-radius: 22px 22px 0 0; padding: 10px 18px 20px; display: grid; gap: 14px; }
+.sheet.full { max-height: 100%; height: 100%; border-radius: 0; align-content: start; padding-top: 14px; }
+.grab { width: 40px; height: 4px; border-radius: 2px; background: var(--line); justify-self: center; }
+.sheet h2 { font-family: var(--font-display); font-size: 23px; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field label, .field .lab { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.field input, .field textarea { width: 100%; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); padding: 10px 12px; font-size: 16px; min-width: 0; }
+.field input { height: 46px; padding: 0 12px; }
+.field textarea { min-height: 76px; resize: vertical; line-height: 1.4; }
+.opts { display: grid; gap: 10px; }
+.opt { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--paper); text-align: left; font-size: 17px; font-weight: 600; width: 100%; }
+.opt small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.opt .i { width: 26px; height: 26px; color: var(--accent); }
+.opt .r { margin-left: auto; font-size: 13px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.opt.known { opacity: .7; }
+.choice { display: flex; flex-wrap: wrap; gap: 6px; }
+.choice button { border: 1.5px solid var(--line); background: var(--paper); border-radius: 999px; padding: 7px 12px; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.choice button .i { width: 15px; height: 15px; }
+.choice button[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--paper)); font-weight: 700; }
+.choice.wines button[aria-pressed="true"] { border-color: var(--wine); background: color-mix(in srgb, var(--wine) 12%, var(--paper)); color: var(--wine); }
+.rate { display: flex; gap: 6px; }
+.rate button { font-size: 34px; line-height: 1; color: var(--line); }
+.rate button.on { color: var(--accent); }
+.photos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.photos .ph { aspect-ratio: 1; }
+.photos .add { aspect-ratio: 1; border-radius: 12px; border: 1.5px dashed var(--line); display: grid; place-items: center; color: var(--muted); }
+.btn { border-radius: 12px; padding: 12px 16px; font-weight: 600; background: var(--accent); color: var(--on-accent); text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.btn.small { padding: 7px 12px; font-size: 14px; }
+.btn.wide { width: 100%; font-size: 17px; padding: 14px; }
+.big2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.big2 button { display: grid; gap: 6px; justify-items: start; padding: 14px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--paper); text-align: left; font-weight: 700; font-size: 16px; }
+.big2 button small { font-weight: 400; font-size: 13px; color: var(--muted); }
+.big2 button .i { color: var(--accent); width: 26px; height: 26px; }
+.note { font-size: 13px; color: var(--muted); line-height: 1.45; margin: 0; }
+.loading { display: grid; place-items: center; gap: 16px; text-align: center; padding: 50px 0; }
+.spinner { width: 36px; height: 36px; border-radius: 50%; border: 3.5px solid var(--line); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } .fab { transition: none; } }
+.snack { position: absolute; left: 12px; right: 12px; bottom: 84px; background: var(--ink); color: var(--paper); border-radius: 14px; padding: 12px 14px; font-size: 15px; z-index: 30; box-shadow: var(--shadow); display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.snack button { font-weight: 700; padding: 4px 10px; border-radius: 8px; background: var(--accent); color: var(--on-accent); }
+.exif { display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 14px; background: var(--paper); border: 1px solid var(--line); }
+.exif .ph { width: 64px; height: 64px; flex: none; }
+</style>
+
+<div class="stage">
+  <div class="phone" id="phone">
+    <div id="screen" style="display:contents"></div>
+    <nav class="nav" aria-label="Carnets">
+      <button data-other="Courses"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M4 9h16l-2.2 10.2a2 2 0 0 1-2 1.6H8.2a2 2 0 0 1-2-1.6z"/><path d="M8.5 9l3-5M15.5 9l-3-5"/></svg></span>Courses</button>
+      <button data-other="Recettes"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg></span>Recettes</button>
+      <button data-other="Cave"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M10 2h4v4.5c0 1 2.5 2.4 2.5 5.5v9a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9c0-3.1 2.5-4.5 2.5-5.5z"/><path d="M7.5 14h9"/></svg></span>Cave</button>
+      <button aria-current="page" data-home><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M12 22s7-6.1 7-12a7 7 0 0 0-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg></span>Souvenirs</button>
+    </nav>
+    <div id="layer"></div>
+  </div>
+
+  <aside class="notes">
+    <h1>Souvenirs</h1>
+    <p>Maquette du carnet Souvenirs, à valider avant le développement de la phase 4. Les lieux, photos et visites sont des exemples inventés, et rien n'est enregistré. Les photos sont simulées par des aplats de couleur.</p>
+    <ul>
+      <li><b>Carte</b> (vue par défaut) : tes lieux, pleins quand tu y es allé, en pointillés quand ils sont « à essayer ». Touche une épingle pour l'aperçu, puis la fiche. Le bouton en haut à droite te place sur la carte.</li>
+      <li><b>Liste</b> : triée par visite récente, par note ou par distance. Les pastilles filtrent : visités, à essayer, restos, bars, cafés, caves, boulangeries, marchés.</li>
+      <li><b>Livre</b> : tes visites mois par mois, en grandes photos, comme un album.</li>
+      <li><b>Fiche d'un lieu</b> : « J'y suis allé », itinéraire dans Google Maps, ce que tu reprendrais, l'adresse, et le journal des visites avec qui, la note, les photos et les vins bus (liés à la Cave).</li>
+      <li><b>+ Lieu</b> : autour de moi, recherche par nom, depuis une photo (son GPS), ou point posé à la main. Puis « J'y suis allé » ou « À essayer ».</li>
+    </ul>
+    <h2>À valider</h2>
+    <ul>
+      <li class="q">Un vin coché dans une visite apparaît aussi dans la Cave, sous « Dégustés », avec le lieu comme « Où ». Un vin de la carte qui n'est pas dans ta cave y est créé en « Dégusté ailleurs ».</li>
+      <li class="q">Ajouts de ma part : l'encadré <b>« À reprendre »</b> sur la fiche (les plats à recommander), « conseillé par » pour les lieux à essayer, et la date de la visite reprise de la photo.</li>
+      <li class="q">L'app utilisera la vraie carte OpenStreetMap. Ta position ne sert que sur le téléphone ; seule la recherche de lieux autour d'elle part vers OpenStreetMap.</li>
+    </ul>
+  </aside>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const P = {
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    back: '<path d="M15 5l-7 7 7 7"/>',
+    more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+    camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+    image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/>',
+    pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+    resto: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2.2 1.2-3.5 4-3.5 7.5H17"/>',
+    bar: '<path d="M7 3h10l-.6 6.2a4.4 4.4 0 0 1-8.8 0z"/><path d="M12 13.6V20M8.5 21h7"/>',
+    cafe: '<path d="M4 9h12v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h2a2 2 0 0 1 0 4h-2M8 3v3M12 3v3"/>',
+    cave: '<path d="M10 2h4v4.5c0 1 2.5 2.4 2.5 5.5v9a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9c0-3.1 2.5-4.5 2.5-5.5z"/><path d="M7.5 14h9"/>',
+    boul: '<path d="M4 14c0-4.4 3.6-8 8-8s8 3.6 8 8v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 9.5l-1 3.5M13 8.5l-.5 4M17 10l-1.2 3"/>',
+    marche: '<path d="M4 9h16l-2.2 10.2a2 2 0 0 1-2 1.6H8.2a2 2 0 0 1-2-1.6z"/><path d="M8.5 9l3-5M15.5 9l-3-5"/>',
+    bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>',
+    locate: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22"/>',
+    route: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    glass: '<path d="M7 3h10l-.6 6.2a4.4 4.4 0 0 1-8.8 0z"/><path d="M12 13.6V20M8.5 21h7"/>',
+    pin: '<path d="M12 22s7-6.1 7-12a7 7 0 0 0-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/>',
+    share: '<path d="M12 3v12M7.5 7.5L12 3l4.5 4.5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+    trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+    close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  };
+  const ic = (n, a) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" ${a || ''}>${P[n]}</svg>`;
+  const stars = n => `<span class="stars" aria-label="${String(n).replace('.', ',')} sur 5">${'★'.repeat(Math.round(n))}<span class="off">${'★'.repeat(5 - Math.round(n))}</span></span>`;
+  const TYPES = { resto: 'Resto', bar: 'Bar', cafe: 'Café', cave: 'Cave à vin', boul: 'Boulangerie', marche: 'Marché' };
+  const TYPES_PL = { resto: 'Restos', bar: 'Bars', cafe: 'Cafés', cave: 'Caves', boul: 'Boulangeries', marche: 'Marchés' };
+  const ph = (p, cls) => `<div class="ph ${cls || ''}" style="--h1:${p[1]};--h2:${p[2]}"><span>${esc(p[0])}</span></div>`;
+
+  // ---------- Données d'exemple (inventées) ----------
+  // x, y : position sur la carte (en %) ; d : distance depuis ta position ; v : visites, la plus récente en premier
+  const L = [
+    { id: 'stseb', name: 'Le Saint-Sébastien', type: 'resto', sub: 'Bistrot', quartier: 'Les Tilleuls', addr: '12 rue des Tilleuls', x: 38, y: 34, d: 350, tags: ['bistronomie', 'terrasse'],
+      reco: 'Le pâté en croûte, la côte de veau pour deux, le baba au rhum.',
+      v: [
+        { d: '15 nov. 2026', k: '2026-11', who: ['Claire', 'Paul'], s: 5, c: 'Toujours aussi bon. Carte des vins nature très bien faite.', ph: [['Pâté en croûte', '#b5764a', '#6e3a24'], ['Côte de veau', '#9a5a3a', '#4a2a1e'], ['Le menu', '#d8cfb8', '#8c8068']], w: ['Gramenon · La Sagesse 2022'] },
+        { d: '2 juil. 2026', k: '2026-07', who: ['Claire'], s: 4, c: 'En terrasse. Un peu d’attente.', ph: [['Terrasse', '#7aa06a', '#3e5e38']], w: [] },
+        { d: '14 févr. 2026', k: '2026-02', who: ['Claire'], s: 5, c: '', ph: [], w: ['Domaine Huet · Le Mont 2020'] },
+      ] },
+    { id: 'lumiere', name: 'Café Lumière', type: 'cafe', quartier: 'Centre', addr: '3 place du Marché', x: 56, y: 52, d: 120, tags: ['brunch'],
+      reco: 'Le flat white et le banana bread.',
+      v: [{ d: '9 nov. 2026', k: '2026-11', who: [], s: 4, c: 'Bon brunch du dimanche, venir avant 11 h.', ph: [['Brunch', '#e2b86a', '#a0663a'], ['Flat white', '#c9a27a', '#6b4a32']], w: [] }] },
+    { id: 'ferre', name: 'Maison Ferré', type: 'boul', quartier: 'Centre', addr: '18 rue Haute', x: 63, y: 41, d: 260, tags: ['levain'],
+      reco: 'Le pain au levain, la tarte au citron du samedi.',
+      v: [
+        { d: '16 nov. 2026', k: '2026-11', who: [], s: 5, c: 'La meilleure tarte au citron du quartier.', ph: [['Tarte au citron', '#f0d36a', '#c9902a']], w: [] },
+        { d: '20 sept. 2026', k: '2026-09', who: [], s: 4, c: '', ph: [], w: [] },
+      ] },
+    { id: 'tilleuls', name: 'Cave des Tilleuls', type: 'cave', quartier: 'Les Tilleuls', addr: '40 rue des Tilleuls', x: 30, y: 45, d: 480, tags: ['nature', 'conseils'],
+      reco: 'Demander Julien pour les vins de Loire.',
+      v: [{ d: '8 nov. 2026', k: '2026-11', who: [], s: 5, c: 'Acheté 6 Chinon et un Champagne. Très bons conseils.', ph: [['Les rayons', '#8a4a5a', '#3e1e28']], w: [] }] },
+    { id: 'comptoir', name: 'Le Comptoir du Marché', type: 'bar', sub: 'Bar à vin', quartier: 'Centre', addr: '7 place du Marché', x: 52, y: 60, d: 90, tags: ['planches', 'vin au verre'],
+      reco: 'La planche mixte, le Morgon au verre.',
+      v: [{ d: '24 oct. 2026', k: '2026-10', who: ['Paul', 'Julie'], s: 4, c: 'Planches généreuses, bruyant le vendredi.', ph: [['Planche', '#b0623a', '#5c2e1e'], ['Ardoise', '#3e4a44', '#1e2622']], w: ['Domaine Lapierre · Morgon 2021'] }] },
+    { id: 'halles', name: 'Les Halles du Centre', type: 'marche', sub: 'Marché couvert', quartier: 'Centre', addr: 'Place des Halles', x: 47, y: 72, d: 300, tags: ['samedi'],
+      reco: 'Le fromager du fond, les huîtres le dimanche.',
+      v: [{ d: '1 nov. 2026', k: '2026-11', who: ['Claire'], s: 4, c: 'Huîtres et vin blanc au comptoir du poissonnier.', ph: [['Huîtres', '#9fb7c2', '#4a6470'], ['Fromages', '#e8d9a0', '#a88a4a']], w: [] }] },
+    { id: 'nonna', name: 'Trattoria Nonna', type: 'resto', sub: 'Italien', quartier: 'Bords de rivière', addr: '2 quai des Arts', x: 74, y: 25, d: 900, tags: ['italien', 'pâtes fraîches'], todo: true, why: 'Conseillé par Paul : les pâtes fraîches et le tiramisu.', v: [] },
+    { id: 'kodo', name: 'Kodo Ramen', type: 'resto', sub: 'Japonais', quartier: 'Gare', addr: '25 avenue de la Gare', x: 22, y: 66, d: 750, tags: ['ramen'], todo: true, why: 'Vu sur Instagram.', v: [] },
+    { id: 'zinc', name: 'Le Petit Zinc', type: 'bar', quartier: 'Centre', addr: '1 rue Basse', x: 66, y: 66, d: 210, tags: ['terrasse'], todo: true, why: 'Pour l’apéro au soleil, vu en passant.', v: [] },
+  ];
+  // Résultats « autour de moi » et recherche (comme OpenStreetMap les renverrait)
+  const NEAR = [
+    { name: 'Le Comptoir du Marché', type: 'bar', addr: '7 place du Marché', d: 90, known: 'comptoir' },
+    { name: 'Café Lumière', type: 'cafe', addr: '3 place du Marché', d: 120, known: 'lumiere' },
+    { name: 'Sushi Hana', type: 'resto', addr: '9 rue Basse', d: 140 },
+    { name: 'Boulangerie du Parc', type: 'boul', addr: '22 boulevard du Parc', d: 190 },
+    { name: 'La Cave à Fromages', type: 'marche', addr: '5 rue Haute', d: 230 },
+  ];
+  const WINES = ['Gramenon · La Sagesse 2022', 'Domaine Lapierre · Morgon 2021', 'Roches Neuves · Terres de Chinon 2020', 'Bérêche · Brut Réserve'];
+  const PEOPLE = ['Claire', 'Paul', 'Julie'];
+
+  const fmtD = m => (m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1).replace('.', ',')} km`);
+  const avg = l => (l.v.length && l.v.some(v => v.s) ? l.v.filter(v => v.s).reduce((a, v) => a + v.s, 0) / l.v.filter(v => v.s).length : null);
+  const HUES = { resto: ['#b5764a', '#6e3a24'], bar: ['#8a4a5a', '#3e1e28'], cafe: ['#c9a27a', '#6b4a32'], cave: ['#7f2539', '#3e1220'], boul: ['#e2b86a', '#a0663a'], marche: ['#7aa06a', '#3e5e38'] };
+  const MOIS = { 'janv.': 0, 'févr.': 1, mars: 2, 'avr.': 3, mai: 4, juin: 5, 'juil.': 6, août: 7, 'sept.': 8, 'oct.': 9, 'nov.': 10, 'déc.': 11 };
+  const toDate = s => { const [d, m, y] = s.split(' '); return new Date(+y, MOIS[m], +d).getTime(); };
+  const last = l => (l.v[0] ? toDate(l.v[0].d) : 0);
+
+  // ---------- État ----------
+  const state = { view: 'carte', id: null, q: '', filter: 'tous', type: null, sel: null, sort: 'recent', me: false };
+
+  function render() { $('#screen').innerHTML = state.id ? renderFiche() : renderHome(); }
+
+  function matches(l) {
+    const n = x => String(x).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (state.filter === 'visites' && l.todo) return false;
+    if (state.filter === 'essayer' && !l.todo) return false;
+    if (state.type && l.type !== state.type) return false;
+    if (!state.q) return true;
+    return [l.name, l.sub || '', TYPES[l.type], l.quartier, l.addr, ...l.tags, ...l.v.map(v => v.c)].some(x => n(x).includes(n(state.q)));
+  }
+
+  const tile = l => `<span class="ptile${l.todo ? ' todo' : ''}" style="--h1:${HUES[l.type][0]};--h2:${HUES[l.type][1]}">${ic(l.todo ? 'bookmark' : l.type)}</span>`;
+  const prow = l => {
+    const a = avg(l);
+    return `<button class="prow" data-open="${l.id}">${tile(l)}
+      <span class="t"><b>${esc(l.name)}</b>
+        <span class="meta">${esc(l.sub || TYPES[l.type])} · ${esc(l.quartier)} · <span class="dist">${fmtD(l.d)}</span></span>
+        <span>${l.todo ? `<span class="tag todo">à essayer</span> <span class="meta">${esc(l.why)}</span>` : `${a ? stars(a) : ''} <span class="meta">${l.v.length} visite${l.v.length > 1 ? 's' : ''} · ${l.v[0].d}</span>`}</span></span></button>`;
+  };
+
+  function renderHome() {
+    const list = L.filter(matches);
+    const views = [['carte', 'Carte'], ['liste', 'Liste'], ['livre', 'Livre']];
+    let h = `<div class="topbar"><h1 class="title">Souvenirs</h1><div style="display:flex;align-items:center;gap:2px"><span class="sync">à jour</span><button class="iconbtn" aria-label="Réglages" data-soon>${ic('sliders')}</button></div></div>
+      <div class="main">
+      <div class="seg" role="group" aria-label="Vue">${views.map(([k, n]) => `<button data-view="${k}" aria-pressed="${state.view === k}">${n}</button>`).join('')}</div>
+      <div class="searchrow"><label class="search">${ic('search')}<input id="q" value="${esc(state.q)}" placeholder="Lieu, quartier, plat, tag…" aria-label="Chercher un lieu"></label></div>
+      <div class="chips" role="group" aria-label="Filtres">
+        ${[['tous', 'Tous'], ['visites', 'Visités'], ['essayer', 'À essayer']].map(([k, n]) => `<button class="chip" data-filter="${k}" aria-pressed="${state.filter === k}">${n}</button>`).join('')}
+        <span class="chip sep" aria-hidden="true"></span>
+        ${Object.keys(TYPES).map(k => `<button class="chip" data-type="${k}" aria-pressed="${state.type === k}">${ic(k)}${TYPES_PL[k]}</button>`).join('')}
+      </div>`;
+
+    if (state.view === 'carte') {
+      const sel = L.find(l => l.id === state.sel && matches(l));
+      h += `<div class="map" id="map">${mapSvg()}
+        ${state.me ? '<span class="me" style="left:54%;top:57%" aria-label="Ta position"></span>' : ''}
+        ${list.map(l => `<button class="pin${l.todo ? ' todo' : ''}" data-pin="${l.id}" aria-pressed="${state.sel === l.id}" style="left:${l.x}%;top:${l.y}%" aria-label="${esc(l.name)}${l.todo ? ', à essayer' : ''}"><span class="head">${ic(l.todo ? 'bookmark' : l.type)}</span>${state.sel === l.id ? `<span class="name">${esc(l.name)}</span>` : ''}</button>`).join('')}
+        <button class="mapbtn" data-me aria-label="Me placer sur la carte">${ic('locate')}</button>
+        <span class="attrib">© OpenStreetMap</span>
+        ${sel ? `<button class="preview" data-open="${sel.id}">${tile(sel)}<span class="t"><b>${esc(sel.name)}</b><span class="meta">${esc(sel.sub || TYPES[sel.type])} · <span class="dist">${fmtD(sel.d)}</span></span><span>${sel.todo ? `<span class="tag todo">à essayer</span>` : `${stars(avg(sel))} <span class="meta">${sel.v.length} visite${sel.v.length > 1 ? 's' : ''}</span>`}</span></span>${ic('back', 'style="transform:rotate(180deg);color:var(--muted)"')}</button>` : ''}
+        ${!list.length ? '<p class="preview" style="justify-content:center">Aucun lieu ne correspond.</p>' : ''}
+      </div>
+      <button class="fab${sel ? ' up' : ''}" data-add>${ic('plus')}Lieu</button></div>`;
+      return h;
+    }
+
+    h += '<div class="scroll" id="scroll">';
+    if (state.view === 'liste') {
+      const sorted = [...list].sort((a, b) => state.sort === 'proche' ? a.d - b.d : state.sort === 'note' ? (avg(b) || 0) - (avg(a) || 0) : last(b) - last(a));
+      h += `<div class="sec-h"><h2>${list.length} lieu${list.length > 1 ? 'x' : ''}</h2>
+        <select aria-label="Trier" id="sort"><option value="recent" ${state.sort === 'recent' ? 'selected' : ''}>Visite récente</option><option value="note" ${state.sort === 'note' ? 'selected' : ''}>Mieux notés</option><option value="proche" ${state.sort === 'proche' ? 'selected' : ''}>Plus proches</option></select></div>`;
+      h += sorted.map(prow).join('') || '<p class="hint" style="padding-top:12px">Aucun lieu ne correspond.</p>';
+    } else {
+      const visits = list.filter(l => !l.todo).flatMap(l => l.v.map(v => ({ l, v }))).sort((a, b) => toDate(b.v.d) - toDate(a.v.d));
+      const months = {};
+      visits.forEach(x => (months[x.v.k] = months[x.v.k] || []).push(x));
+      const MN = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+      Object.keys(months).sort().reverse().forEach(k => {
+        const [y, m] = k.split('-');
+        h += `<div class="month">${MN[+m - 1].replace(/^./, c => c.toUpperCase())} ${y}<span>${months[k].length} visite${months[k].length > 1 ? 's' : ''}</span></div>`;
+        h += months[k].map(({ l, v }) => {
+          const shots = v.ph.length ? v.ph.slice(0, 3) : [[TYPES[l.type], HUES[l.type][0], HUES[l.type][1]]];
+          return `<button class="page" data-open="${l.id}"><div class="shots${shots.length === 1 ? ' one' : shots.length === 2 ? ' two' : ''}">${shots.map(p => ph(p)).join('')}</div>
+            <div class="cap"><b>${esc(l.name)}</b><span class="meta">${v.d}${v.who.length ? ' · avec ' + esc(v.who.join(' et ')) : ''} · ${stars(v.s)}</span>${v.c ? `<p>${esc(v.c)}</p>` : ''}
+            ${v.w.length ? `<span class="winechips">${v.w.map(x => `<span class="winechip">${ic('glass')}${esc(x)}</span>`).join('')}</span>` : ''}</div></button>`;
+        }).join('');
+      });
+      if (!visits.length) h += '<p class="hint" style="padding-top:12px">Aucune visite ne correspond.</p>';
+      h += '<p class="hint" style="padding-top:6px">Le livre se remplit tout seul avec les photos de tes visites.</p>';
+    }
+    h += `</div><button class="fab" data-add>${ic('plus')}Lieu</button></div>`;
+    return h;
+  }
+
+  // Carte dessinée : quartiers, rivière, parc, grands axes
+  function mapSvg(mini) {
+    return `<svg class="bg" viewBox="0 0 400 560" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="400" height="560" fill="var(--map-land)"/>
+      ${[[20, 80, 90, 60], [150, 70, 70, 80], [250, 60, 60, 50], [40, 300, 70, 90], [230, 280, 80, 70], [300, 380, 70, 90], [120, 420, 80, 60], [20, 470, 90, 60]].map(([x, y, w, hh]) => `<rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="6" fill="var(--map-block)"/>`).join('')}
+      <path d="M250 150 q60 -20 110 30 q20 50 -20 80 q-60 20 -90 -20 z" fill="var(--map-park)"/>
+      <path d="M-20 120 C 80 170, 160 90, 240 120 S 380 60, 430 90" stroke="var(--map-water)" stroke-width="30" fill="none"/>
+      <path d="M0 230 L400 260" stroke="var(--map-road)" stroke-width="12"/>
+      <path d="M210 0 L190 560" stroke="var(--map-road)" stroke-width="12"/>
+      <path d="M0 400 C 120 380, 280 420, 400 380" stroke="var(--map-road)" stroke-width="10" fill="none"/>
+      ${[[0, 320, 400, 330], [0, 480, 400, 470], [90, 160, 110, 560], [300, 130, 290, 560], [140, 230, 330, 560]].map(([a, b, c, d]) => `<path d="M${a} ${b} L${c} ${d}" stroke="var(--map-minor)" stroke-width="5"/>`).join('')}
+      ${mini ? '' : `<text class="lbl" x="18" y="110">LA RIVIÈRE</text><text class="lbl" x="268" y="200">PARC DES TILLEULS</text><text class="lbl" x="8" y="224">RUE DES TILLEULS</text><text class="lbl" x="215" y="520" transform="rotate(-88 215 520)">RUE HAUTE</text><text class="lbl" x="250" y="408">BD DU PARC</text>`}
+    </svg>`;
+  }
+
+  // ---------- Fiche d'un lieu ----------
+  function renderFiche() {
+    const l = L.find(x => x.id === state.id);
+    const a = avg(l);
+    const photos = l.v.flatMap(v => v.ph);
+    const top = photos.length >= 3
+      ? `<div class="ftop">${ph(photos[0])}<div class="side">${ph(photos[1])}${ph(photos[2])}</div>`
+      : photos.length ? `<div class="ftop single">${ph(photos[0])}` : `<div class="ftop single"><div class="map" style="border:0">${mapSvg()}<span class="pin${l.todo ? ' todo' : ''}" style="left:50%;top:55%"><span class="head">${ic(l.todo ? 'bookmark' : l.type)}</span></span></div>`;
+    return `<div class="main"><div class="scroll" id="scroll" style="padding-bottom:24px">
+      ${top}<button class="back" data-home aria-label="Retour aux souvenirs">${ic('back')}</button><button class="more" data-more aria-label="Plus d’actions">${ic('more')}</button></div>
+      <div class="fiche">
+        <h1>${esc(l.name)}</h1>
+        <div class="chipsline"><span class="tag plain">${ic(l.type, 'style="width:14px;height:14px"')}${esc(l.sub || TYPES[l.type])}</span><span class="tag plain">${esc(l.quartier)}</span>${l.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+        <div class="statline">${l.todo ? '<span class="tag todo">à essayer</span>' : `${stars(a)}<span>${a.toFixed(1).replace('.', ',')} · ${l.v.length} visite${l.v.length > 1 ? 's' : ''} · dernière le ${l.v[0].d}</span>`}</div>
+        <div class="acts">
+          <button class="act primary" data-visit>${ic('check')}J’y suis allé</button>
+          <button class="act" data-gmaps>${ic('route')}Itinéraire</button>
+          <button class="act" data-share>${ic('share')}Partager</button>
+        </div>
+        ${l.todo ? `<div class="why"><span class="meta" style="font-weight:700;text-transform:uppercase;letter-spacing:.07em;font-size:12px">Pourquoi y aller</span><p style="margin:0;line-height:1.45">${esc(l.why)}</p></div>`
+          : `<button class="reco" data-reco><small><span>À reprendre</span>${ic('pen', 'style="width:16px;height:16px"')}</small><p>${esc(l.reco)}</p></button>`}
+        <section class="block"><h2>Adresse</h2>
+          <div class="addr"><div class="mini">${mapSvg(true)}<span class="dotpin"></span></div>
+            <div style="display:grid;gap:4px"><b style="font-weight:600">${esc(l.addr)}</b><span class="meta">${esc(l.quartier)} · <span class="dist">${fmtD(l.d)}</span> de toi</span>
+              <button class="linkbtn" data-gmaps>${ic('ext')}Ouvrir dans Google Maps</button></div></div></section>
+        <section class="block"><h2>Visites <span class="meta" style="font-family:var(--font-body)">${l.v.length ? l.v.length + ' fois' : ''}</span></h2>
+          <div class="visits">${l.v.length ? l.v.map(v => `<div class="visit"><div class="hd"><b>${v.d}</b>${stars(v.s)}</div>
+            ${v.who.length ? `<span class="meta">${ic('users', 'style="width:15px;height:15px;vertical-align:-3px"')} avec ${esc(v.who.join(' et '))}</span>` : ''}
+            ${v.c ? `<p>${esc(v.c)}</p>` : ''}
+            ${v.ph.length ? `<div class="thumbs">${v.ph.map(p => ph(p)).join('')}</div>` : ''}
+            ${v.w.length ? `<div class="winechips">${v.w.map(x => `<button class="winechip" data-wine="${esc(x)}">${ic('glass')}${esc(x)}</button>`).join('')}</div>` : ''}
+          </div>`).join('') : '<p class="note">Pas encore de visite. « J’y suis allé » la note et retire le lieu des « À essayer ».</p>'}</div></section>
+      </div></div></div>`;
+  }
+
+  // ---------- Feuilles ----------
+  function sheet(html, full) {
+    $('#layer').innerHTML = `<div class="overlay" data-close><div class="sheet${full ? ' full' : ''}" role="dialog" aria-modal="true">${full ? '' : '<div class="grab"></div>'}${html}</div></div>`;
+    return $('#layer .sheet');
+  }
+  const close = () => { $('#layer').innerHTML = ''; };
+  // Redessine une feuille sans perdre ce qui a déjà été tapé
+  const keep = (sh, draw) => () => {
+    const v = {}; sh.querySelectorAll('input, textarea').forEach((el, k) => (v[el.id || k] = el.value));
+    draw(); sh.querySelectorAll('input, textarea').forEach((el, k) => { const x = v[el.id || k]; if (x !== undefined) el.value = x; });
+  };
+  let snackT;
+  function snack(msg, undo) {
+    clearTimeout(snackT); document.querySelectorAll('.snack').forEach(x => x.remove());
+    const el = document.createElement('div'); el.className = 'snack'; el.setAttribute('role', 'status');
+    el.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button>Annuler</button>' : ''}`;
+    $('#phone').appendChild(el);
+    if (undo) el.querySelector('button').onclick = () => { undo(); el.remove(); render(); };
+    snackT = setTimeout(() => el.remove(), 4000);
+  }
+
+  function addSheet() {
+    const sh = sheet(`<h2>Ajouter un lieu</h2>
+      <div class="opts">
+        <button class="opt" data-near>${ic('locate')}<span>Autour de moi<small>Restos, bars, cafés et commerces à moins de 300 m</small></span></button>
+        <button class="opt" data-byname>${ic('search')}<span>Chercher par nom<small>« Trattoria Nonna », « boulangerie rue Haute »…</small></span></button>
+        <button class="opt" data-fromphoto>${ic('image')}<span>Depuis une photo<small>Le lieu et la date où elle a été prise</small></span></button>
+        <button class="opt" data-point>${ic('pin')}<span>Poser un point sur la carte<small>Pour un lieu absent d’OpenStreetMap</small></span></button>
+      </div>
+      <p class="note">Les lieux viennent d’OpenStreetMap. Ta position reste sur le téléphone ; seule la recherche autour d’elle est envoyée.</p>`);
+    sh.addEventListener('click', e => {
+      if (e.target.closest('[data-near]')) { sheet(`<div class="loading" role="status"><div class="spinner"></div><b>Recherche autour de toi…</b></div>`, true); setTimeout(() => resultsSheet('Autour de toi', NEAR), 900); }
+      if (e.target.closest('[data-byname]')) searchSheet();
+      if (e.target.closest('[data-fromphoto]')) photoSheet();
+      if (e.target.closest('[data-point]')) { close(); snack('Ouvrirait la carte avec un point à placer, puis le nom et le type du lieu.'); }
+    });
+  }
+
+  function resultsSheet(title, res, extra, fromPhoto) {
+    const sh = sheet(`<div class="sheet-head"><h2>${esc(title)}</h2><button class="btn ghost small" data-x>Annuler</button></div>
+      ${extra || ''}
+      <div class="opts">${res.map((r, k) => `<button class="opt${r.known ? ' known' : ''}" data-res="${k}">${ic(r.type)}<span>${esc(r.name)}<small>${TYPES[r.type]} · ${esc(r.addr)}${r.known ? ' · déjà dans tes souvenirs' : ''}</small></span><span class="r">${fmtD(r.d)}</span></button>`).join('')}</div>
+      <p class="note">Pas dans la liste ? « Poser un point sur la carte ».</p>`, true);
+    sh.addEventListener('click', e => {
+      const b = e.target.closest('[data-res]'); if (!b) return;
+      const r = res[+b.dataset.res];
+      if (r.known) { close(); state.id = r.known; render(); visitSheet(L.find(l => l.id === r.known), fromPhoto); return; }
+      kindSheet(r, fromPhoto);
+    });
+  }
+
+  function searchSheet() {
+    const res = [
+      { name: 'Trattoria Nonna', type: 'resto', addr: '2 quai des Arts', d: 900, known: 'nonna' },
+      { name: 'Trattoria da Marco', type: 'resto', addr: '14 rue de la Gare', d: 1300 },
+      { name: 'La Trattoria', type: 'resto', addr: '3 rue du Port, Bord-de-Mer', d: 48000 },
+    ];
+    resultsSheet('Chercher un lieu', res, '<div class="field"><label for="s-q">Nom, et la ville si besoin</label><input id="s-q" value="trattoria"></div>');
+  }
+
+  function photoSheet() {
+    const res = [
+      { name: 'Le Saint-Sébastien', type: 'resto', addr: '12 rue des Tilleuls', d: 10, known: 'stseb' },
+      { name: 'Boucherie des Tilleuls', type: 'marche', addr: '14 rue des Tilleuls', d: 25 },
+      { name: 'Cave des Tilleuls', type: 'cave', addr: '40 rue des Tilleuls', d: 70, known: 'tilleuls' },
+    ];
+    resultsSheet('Où a été prise cette photo ?', res, `<div class="exif">${ph(['Côte de veau', '#9a5a3a', '#4a2a1e'])}<div><b>15 nov. 2026, 20 h 41</b><p class="note">Prise près du 12 rue des Tilleuls. Choisis le lieu : la visite sera datée du jour de la photo, avec la photo.</p></div></div>`, { date: '15 nov. 2026', photo: ['Côte de veau', '#9a5a3a', '#4a2a1e'] });
+  }
+
+  // Nouveau lieu : y es-tu allé, ou à essayer ?
+  function kindSheet(r, fromPhoto) {
+    const sh = sheet(`<h2>${esc(r.name)}</h2><p class="note" style="margin-top:-8px">${TYPES[r.type]} · ${esc(r.addr)}</p>
+      <div class="big2"><button data-k="visit">${ic('check')}J’y suis allé<small>Noter la visite : date, avec qui, photos</small></button>
+      <button data-k="todo">${ic('bookmark')}À essayer<small>Le garder pour plus tard</small></button></div>`);
+    sh.addEventListener('click', e => {
+      const b = e.target.closest('[data-k]'); if (!b) return;
+      const l = { id: 'n' + Date.now(), name: r.name, type: r.type, quartier: 'Centre', addr: r.addr, x: 58, y: 48, d: r.d, tags: [], reco: 'Ce que tu reprendrais : touche pour l’écrire.', v: [] };
+      if (b.dataset.k === 'todo') todoSheet(l);
+      else visitSheet(l, fromPhoto, true);
+    });
+  }
+
+  function todoSheet(l) {
+    const sh = sheet('');
+    sh.innerHTML = `<div class="grab"></div><div class="sheet-head"><h2>À essayer</h2><button class="btn ghost small" data-x>Annuler</button></div>
+      <p class="note" style="margin-top:-6px">${esc(l.name)}</p>
+      <div class="field"><label for="t-why">Pourquoi, conseillé par qui</label><input id="t-why" placeholder="ex. Conseillé par Julie, pour le brunch"></div>
+      <div class="field"><label for="t-tags">Tags</label><input id="t-tags" placeholder="brunch, terrasse…"></div>
+      <button class="btn wide" data-savetodo>Ajouter aux « À essayer »</button>`;
+    sh.addEventListener('click', e => {
+      if (!e.target.closest('[data-savetodo]')) return;
+      l.todo = true; l.why = sh.querySelector('#t-why').value.trim() || 'Ajouté depuis « Autour de moi ».';
+      l.tags = sh.querySelector('#t-tags').value.split(',').map(x => x.trim()).filter(Boolean);
+      L.push(l); close(); state.id = null; state.view = 'carte'; state.sel = l.id; render(); snack(`« ${l.name} » ajouté aux « À essayer »`, () => L.splice(L.indexOf(l), 1));
+    });
+  }
+
+  function visitSheet(l, fromPhoto, isNew) {
+    let note = 0, who = [], wines = [], photos = fromPhoto ? [fromPhoto.photo] : [];
+    const sh = sheet('', true);
+    const extra = [['Le menu', '#d8cfb8', '#8c8068'], ['Dessert', '#e2b86a', '#a0663a'], ['La salle', '#6a7a8a', '#2e3a44']];
+    const draw = keep(sh, () => {
+      sh.innerHTML = `<div class="sheet-head"><h2>J’y suis allé</h2><button class="btn ghost small" data-x>Annuler</button></div>
+        <p class="note" style="margin-top:-6px">${esc(l.name)}${isNew ? ' · nouveau lieu' : ''}</p>
+        <div class="field"><label for="v-date">Quand</label><input id="v-date" value="${fromPhoto ? fromPhoto.date + ' (date de la photo)' : 'Aujourd’hui, 20 nov. 2026'}"></div>
+        <div class="field"><span class="lab">Avec qui</span><div class="choice">${PEOPLE.map(p => `<button data-who="${p}" aria-pressed="${who.includes(p)}">${p}</button>`).join('')}<button data-addwho>${ic('plus')}Quelqu’un d’autre</button></div></div>
+        <div class="field"><span class="lab">Ta note</span><div class="rate">${[1, 2, 3, 4, 5].map(n => `<button data-n="${n}" class="${n <= note ? 'on' : ''}" aria-label="${n} sur 5">★</button>`).join('')}</div></div>
+        <div class="field"><label for="v-com">Commentaire</label><textarea id="v-com" placeholder="Ce que tu as mangé, l’ambiance, le service…"></textarea></div>
+        <div class="field"><span class="lab">Photos (plats, menu, carte des vins)</span><div class="photos">${photos.map(p => ph(p)).join('')}<button class="add" data-addph aria-label="Ajouter une photo">${ic('camera')}</button></div></div>
+        <div class="field"><span class="lab">Vins bus</span><div class="choice wines">${WINES.map(w => `<button data-wine-pick="${esc(w)}" aria-pressed="${wines.includes(w)}">${ic('glass')}${esc(w)}</button>`).join('')}<button data-otherwine>${ic('camera')}Photo de l’étiquette</button></div>
+          <p class="note">Ils apparaissent aussi dans la Cave, sous « Dégustés », avec ce lieu.</p></div>
+        <div class="field"><label for="v-reco">À reprendre la prochaine fois</label><input id="v-reco" placeholder="ex. la côte de veau, le baba"></div>
+        <button class="btn wide" data-savevisit>Enregistrer la visite</button>`;
+    });
+    sh.addEventListener('click', e => {
+      let b;
+      if ((b = e.target.closest('[data-who]'))) { const p = b.dataset.who; who = who.includes(p) ? who.filter(x => x !== p) : [...who, p]; draw(); return; }
+      if (e.target.closest('[data-addwho]')) { snack('Ouvrirait un champ pour le prénom, retenu pour les prochaines fois.'); return; }
+      if ((b = e.target.closest('[data-n]'))) { note = +b.dataset.n; draw(); return; }
+      if (e.target.closest('[data-addph]')) { if (photos.length < 7) photos.push(extra[photos.length % 3]); draw(); return; }
+      if ((b = e.target.closest('[data-wine-pick]'))) { const w = b.dataset.winePick; wines = wines.includes(w) ? wines.filter(x => x !== w) : [...wines, w]; draw(); return; }
+      if (e.target.closest('[data-otherwine]')) { snack('Ouvrirait la lecture de l’étiquette (comme « + Vin » dans la Cave), puis « Dégusté ailleurs ».'); return; }
+      if (e.target.closest('[data-savevisit]')) {
+        const c = sh.querySelector('#v-com').value.trim();
+        const reco = sh.querySelector('#v-reco').value.trim();
+        const v = { d: fromPhoto ? fromPhoto.date : '20 nov. 2026', k: '2026-11', who, s: note || 4, c, ph: photos, w: wines };
+        l.v.unshift(v);
+        if (reco) l.reco = reco;
+        const wasTodo = l.todo; delete l.todo; delete l.why;
+        if (!L.includes(l)) L.push(l);
+        close(); state.id = l.id; render(); $('#scroll').scrollTop = 0;
+        snack(wasTodo ? 'Visite notée : le lieu quitte « À essayer »' : wines.length ? `Visite notée, ${wines.length} vin${wines.length > 1 ? 's' : ''} dans « Dégustés »` : 'Visite notée', () => { l.v.shift(); if (wasTodo) { l.todo = true; l.why = 'À essayer'; } });
+      }
+    });
+    draw();
+  }
+
+  function recoSheet(l) {
+    const sh = sheet(`<h2>À reprendre</h2><p class="note" style="margin-top:-6px">Les plats et les vins à recommander. Ils s’affichent en haut de la fiche.</p>
+      <div class="field"><textarea id="r-txt" aria-label="À reprendre" style="min-height:110px">${esc(l.reco)}</textarea></div>
+      <button class="btn wide" data-savereco>Enregistrer</button>`);
+    sh.addEventListener('click', e => { if (e.target.closest('[data-savereco]')) { l.reco = sh.querySelector('#r-txt').value.trim(); close(); render(); } });
+  }
+
+  function moreSheet(l) {
+    sheet(`<div class="opts">
+      <button class="opt" data-soon2>${ic('pen')}<span>Modifier le lieu<small>Nom, type, tags, position sur la carte</small></span></button>
+      ${l.todo ? '' : `<button class="opt" data-totodo>${ic('bookmark')}<span>Remettre dans « À essayer »<small>Par exemple pour un lieu qui a changé de chef</small></span></button>`}
+      <button class="opt" data-soon2 style="color:var(--warn)">${ic('trash', 'style="color:var(--warn)"')}<span>Supprimer le lieu<small>Avec ses visites, Annuler pendant quelques secondes</small></span></button></div>`);
+  }
+
+  // ---------- Événements ----------
+  $('#phone').addEventListener('input', e => { if (e.target.id === 'q') { state.q = e.target.value; const pos = e.target.selectionStart; render(); const i = $('#q'); i.focus(); i.setSelectionRange(pos, pos); } });
+  $('#phone').addEventListener('change', e => { if (e.target.id === 'sort') { state.sort = e.target.value; render(); } });
+  $('#phone').addEventListener('click', e => {
+    const t = e.target; let b;
+    const cur = () => L.find(x => x.id === state.id);
+    if ($('#layer').contains(t)) {
+      if (t.matches('.overlay[data-close]') || t.closest('[data-x]')) close();
+      if (t.closest('[data-soon2]')) { close(); snack('Pas dans cette maquette.'); }
+      if (t.closest('[data-totodo]')) { const l = cur(); l.todo = true; l.why = 'À retester.'; close(); render(); snack('Remis dans « À essayer »'); }
+      return;
+    }
+    if ((b = t.closest('[data-view]'))) { state.view = b.dataset.view; state.sel = null; render(); }
+    else if ((b = t.closest('[data-filter]'))) { state.filter = b.dataset.filter; render(); }
+    else if ((b = t.closest('[data-type]'))) { state.type = state.type === b.dataset.type ? null : b.dataset.type; render(); }
+    else if ((b = t.closest('[data-pin]'))) { state.sel = state.sel === b.dataset.pin ? null : b.dataset.pin; render(); }
+    else if (t.closest('[data-me]')) { state.me = true; render(); snack('Ta position : la carte se centre sur toi.'); }
+    else if ((b = t.closest('[data-open]'))) { state.id = b.dataset.open; render(); $('#scroll').scrollTop = 0; }
+    else if (t.closest('[data-home]')) { state.id = null; render(); }
+    else if (t.closest('[data-add]')) addSheet();
+    else if (t.closest('[data-visit]')) visitSheet(cur());
+    else if (t.closest('[data-reco]')) recoSheet(cur());
+    else if (t.closest('[data-more]')) moreSheet(cur());
+    else if (t.closest('[data-gmaps]')) snack('Ouvrirait Google Maps sur cette adresse (itinéraire, horaires, avis).');
+    else if (t.closest('[data-share]')) snack('Ouvrirait le partage : nom, adresse, lien Google Maps et ce que tu reprendrais.');
+    else if ((b = t.closest('[data-wine]'))) snack(`Ouvrirait « ${b.dataset.wine} » dans la Cave.`);
+    else if ((b = t.closest('[data-other]'))) snack(`L’onglet ${b.dataset.other} n’est pas dans cette maquette.`);
+    else if (t.closest('[data-soon]')) snack('Les Réglages ne sont pas dans cette maquette.');
+  });
+
+  render();
+})();
+</script>

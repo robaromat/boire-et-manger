@@ -1,11 +1,12 @@
 import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
-import { Icon } from '../components/Icon';
+import { Icon, iconSvg } from '../components/Icon';
 import { Sheet } from '../components/Sheet';
 import { TAB_LABELS } from '../router';
 import { closeTuto, tutoOpen } from './state';
 import { BottleArt } from '../screens/cave/bits';
 import '../styles/cave.css';
+import '../styles/souvenirs.css';
 
 // Panneau de visite. Chaque étape a une petite illustration dessinée avec les classes de l'app et des données
 // inventées ; elle est inerte (rien n'y est cliquable).
@@ -41,6 +42,39 @@ const wrow = (color: 'rouge' | 'blanc' | 'bulles', name: string, meta: string, n
 );
 
 const ILLUS: Record<string, () => JSX.Element> = {
+  'souvenirs.carte': () => (
+    <div class="tuto-souv">
+      <span class="smark"><span class="head" dangerouslySetInnerHTML={{ __html: iconSvg('fork') }} /></span>
+      <span class="smark todo"><span class="head" dangerouslySetInnerHTML={{ __html: iconSvg('bookmark') }} /></span>
+      <span class="smark"><span class="head" dangerouslySetInnerHTML={{ __html: iconSvg('glass') }} /></span>
+    </div>
+  ),
+  'souvenirs.ajout': () => (
+    <div class="opts tight">
+      <div class="opt">
+        <Icon name="locate" />
+        <span>Autour de moi</span>
+      </div>
+      <div class="opt">
+        <Icon name="image" />
+        <span>Depuis une photo</span>
+      </div>
+    </div>
+  ),
+  'souvenirs.visite': () => (
+    <div class="svisit">
+      <div class="hd">
+        <b>15 nov. 2026</b>
+        <span class="stars">★★★★★</span>
+      </div>
+      <div class="winechips">
+        <span class="winechip">
+          <Icon name="glass" />
+          Gramenon · La Sagesse 2022
+        </span>
+      </div>
+    </div>
+  ),
   'cave.boire': () => (
     <div>
       <div class="sec-h late" style="padding:4px 4px 2px">

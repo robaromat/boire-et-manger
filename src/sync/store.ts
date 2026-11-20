@@ -10,6 +10,8 @@ import { RECIPES_FILE, emptyRecipesFile, parseRecipesFile, type RecipesFile } fr
 import { flushPhotos } from '../photos/photos';
 import { mergeCave } from '../cave/merge';
 import { CAVE_FILE, emptyCaveFile, parseCaveFile, type CaveFile } from '../cave/types';
+import { mergeSouvenirs } from '../souvenirs/merge';
+import { SOUVENIRS_FILE, emptySouvenirsFile, parseSouvenirsFile, type SouvenirsFile } from '../souvenirs/types';
 
 // Les instances de synchro de l'app (une par carnet, un fichier chacun), branchées sur les réglages de l'appareil
 // et sur IndexedDB.
@@ -19,6 +21,7 @@ const STATE_KEY = 'sync-state';
 export const engine = signal<SyncEngine<DataFile> | null>(null);
 export const recipesEngine = signal<SyncEngine<RecipesFile> | null>(null);
 export const caveEngine = signal<SyncEngine<CaveFile> | null>(null);
+export const souvenirsEngine = signal<SyncEngine<SouvenirsFile> | null>(null);
 
 const plural = (n: number, w: string) => `${n} ${w}${n > 1 ? 's' : ''}`;
 
@@ -52,21 +55,35 @@ export function startSync(): Promise<void> {
   });
   recipesEngine.value = r;
 
-  const ckey = `${STATE_KEY}:${ref.owner}/${ref.repo}/${CAVE_FILE}`;
-  const c = createSyncEngine<CaveFile>({
+  const c = jsonEngine(ref, CAVE_FILE, parseCaveFile, emptyCaveFile, mergeCave, (d) => `Cave depuis l'app (${plural(d.wines.length, 'vin')})`);
+  caveEngine.value = c;
+  const so = jsonEngine(ref, SOUVENIRS_FILE, parseSouvenirsFile, emptySouvenirsFile, mergeSouvenirs, (d) => `Souvenirs depuis l'app (${d.places.length} lieu${d.places.length > 1 ? 'x' : ''})`);
+  souvenirsEngine.value = so;
+  return Promise.all([e.init(), r.init(), c.init(), so.init()]).then(() => undefined);
+}
+
+/** Moteur d'un carnet rangé dans son propre fichier JSON, créé au premier enregistrement s'il n'existe pas encore. */
+function jsonEngine<T>(
+  ref: { owner: string; repo: string },
+  file: string,
+  parse: (raw: unknown) => T | null,
+  empty: () => T,
+  merge: (base: T | null, local: T, remote: T) => T,
+  message: (d: T) => string,
+): SyncEngine<T> {
+  const key = `${STATE_KEY}:${ref.owner}/${ref.repo}/${file}`;
+  return createSyncEngine<T>({
     read: () =>
-      readJsonFile(repoRef(), CAVE_FILE, parseCaveFile).catch((err: unknown) => {
-        if (err instanceof GitHubError && err.kind === 'not_found') return { data: emptyCaveFile(), sha: '' };
+      readJsonFile(repoRef(), file, parse).catch((err: unknown) => {
+        if (err instanceof GitHubError && err.kind === 'not_found') return { data: empty(), sha: '' };
         throw err;
       }),
-    write: (d, sha, msg) => writeJsonFile(repoRef(), CAVE_FILE, d, sha || null, msg),
-    load: () => idbGet<PersistedState<CaveFile>>(ckey),
-    save: (s) => idbSet(ckey, s),
-    merge: mergeCave,
-    message: (d) => `Cave depuis l'app (${plural(d.wines.length, 'vin')})`,
+    write: (d, sha, msg) => writeJsonFile(repoRef(), file, d, sha || null, msg),
+    load: () => idbGet<PersistedState<T>>(key),
+    save: (st) => idbSet(key, st),
+    merge,
+    message,
   });
-  caveEngine.value = c;
-  return Promise.all([e.init(), r.init(), c.init()]).then(() => undefined);
 }
 
 /**
@@ -92,6 +109,11 @@ export function mutateRecipes(fn: (d: RecipesFile) => RecipesFile): void {
   recipesEngine.value?.mutate(fn);
 }
 
+/** Pareil pour les souvenirs. */
+export function mutateSouvenirs(fn: (d: SouvenirsFile) => SouvenirsFile): void {
+  souvenirsEngine.value?.mutate(fn);
+}
+
 /** Pareil pour la cave. */
 export function mutateCave(fn: (d: CaveFile) => CaveFile): void {
   caveEngine.value?.mutate(fn);
@@ -102,6 +124,7 @@ export async function resetLocal(): Promise<void> {
   engine.value = null;
   recipesEngine.value = null;
   caveEngine.value = null;
+  souvenirsEngine.value = null;
   await idbClear();
 }
 
@@ -112,7 +135,7 @@ let lastFocusSync = 0;
 export function installSyncTriggers(): void {
   if (listening) return;
   listening = true;
-  const all = () => [engine.value, recipesEngine.value, caveEngine.value].filter((x) => x !== null);
+  const all = () => [engine.value, recipesEngine.value, caveEngine.value, souvenirsEngine.value].filter((x) => x !== null);
   window.addEventListener('online', () => all().forEach((x) => void x.sync()));
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;

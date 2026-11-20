@@ -53,6 +53,8 @@ export interface Exit {
   /** Note d'origine sur 100 (import CellarTracker). */
   score?: number;
   ctId?: string; // identifiant CellarTracker, pour ne rien importer deux fois
+  /** Lieu des Souvenirs où le vin a été bu (« l_… »). */
+  place?: string;
   auteur: string;
 }
 

@@ -78,29 +78,52 @@ export const TUTO_STEPS: TutoStep[] = [
   {
     id: 'cave.boire',
     tab: 'cave',
-    since: '2026-11-20T18:00',
+    since: '2026-11-20T16:40',
     title: 'Ta cave, à boire d’abord',
     text: "« À boire » classe tes bouteilles par année de fin de leur fenêtre de dégustation : en rouge, celles qui ont passé leur fenêtre. « Ma cave » dessine le plan de tes lieux et clayettes ; « Dégustés » garde tes notes, « Envies » les vins à acheter.",
   },
   {
     id: 'cave.sortir',
     tab: 'cave',
-    since: '2026-11-20T18:00',
+    since: '2026-11-20T16:40',
     title: 'Sortir une bouteille',
     text: "Sur la fiche d'un vin, « Sortir » baisse le stock et demande pourquoi : bue (tu notes la dégustation, avec le plat ou une recette du carnet), offerte, pour la cuisine, bouchonnée, cassée, disparue ou vendue. Tout reste dans l'historique du vin.",
   },
   {
     id: 'cave.ajout',
     tab: 'cave',
-    since: '2026-11-20T18:00',
+    since: '2026-11-20T16:40',
     title: 'Ajouter un vin',
     text: "« + Vin » lit la photo de l'étiquette : ChatGPT remplit la fiche et estime la fenêtre et les accords (marqués « estimation »). Tu choisis ensuite : en cave, dégusté ailleurs, ou une envie. Ta cave CellarTracker s'importe depuis « Ma cave ».",
+  },
+  {
+    id: 'souvenirs.carte',
+    tab: 'souvenirs',
+    since: '2026-11-20T17:30',
+    title: 'Tes adresses sur la carte',
+    text: "Les épingles pleines sont les lieux où tu es allé, celles en pointillés tes « à essayer ». « Liste » les trie par visite, note ou distance ; « Livre » rassemble les photos de tes visites, mois par mois.",
+  },
+  {
+    id: 'souvenirs.ajout',
+    tab: 'souvenirs',
+    since: '2026-11-20T17:30',
+    title: 'Ajouter un lieu',
+    text: "« + Lieu » trouve les restos, bars et commerces autour de toi, cherche par nom, ou retrouve le lieu et la date d'une photo grâce à son GPS. Puis « J'y suis allé » ou « À essayer ».",
+  },
+  {
+    id: 'souvenirs.visite',
+    tab: 'souvenirs',
+    since: '2026-11-20T17:30',
+    title: 'Noter une visite',
+    text: "« J'y suis allé » garde la date, avec qui, ta note, tes photos et les vins bus : ils rejoignent les « Dégustés » de la Cave. « À reprendre » rappelle ce qu'il faut recommander la prochaine fois.",
   },
 ];
 
 /** Étapes à montrer pour un onglet : jamais vues, ou vues avant leur dernière mise à jour. */
 export function pendingSteps(tab: TabId, seen: TutoSeen, steps: TutoStep[] = TUTO_STEPS): TutoStep[] {
-  return steps.filter((s) => s.tab === tab && (!seen[s.id] || seen[s.id]! < s.since));
+  // Les anciennes vues n'avaient que le jour (« 2026-11-20 ») : comptées comme vues en fin de journée.
+  const at = (x: string) => (x.length === 10 ? `${x}T23:59` : x);
+  return steps.filter((s) => s.tab === tab && (!seen[s.id] || at(seen[s.id]!) < s.since));
 }
 
 export const stepsOf = (tab: TabId, steps: TutoStep[] = TUTO_STEPS) => steps.filter((s) => s.tab === tab);
