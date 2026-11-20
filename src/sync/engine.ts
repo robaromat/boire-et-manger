@@ -1,7 +1,5 @@
 import { signal } from '@preact/signals';
-import type { DataFile } from '../model/types';
-import { GitHubError, countItems, type RemoteFile } from './github';
-import { mergeData } from './merge';
+import { GitHubError, type RemoteFile } from './github';
 
 // Moteur de synchronisation : l'app travaille toujours sur la copie locale (affichage immédiat, hors connexion),
 // et le moteur la rapproche de GitHub en arrière-plan.
@@ -12,30 +10,34 @@ import { mergeData } from './merge';
 
 export type SyncStatus = 'loading' | 'ok' | 'pending' | 'syncing' | 'offline' | 'error';
 
-export interface EngineDeps {
-  read: () => Promise<RemoteFile>;
-  write: (data: DataFile, sha: string | null, message: string) => Promise<string>;
-  load: () => Promise<PersistedState | undefined>;
-  save: (s: PersistedState) => Promise<void>;
+export interface EngineDeps<T> {
+  read: () => Promise<RemoteFile<T>>;
+  write: (data: T, sha: string | null, message: string) => Promise<string>;
+  load: () => Promise<PersistedState<T> | undefined>;
+  save: (s: PersistedState<T>) => Promise<void>;
+  /** Fusion à trois quand les deux appareils ont écrit (voir merge.ts pour Courses). */
+  merge: (base: T | null, local: T, remote: T) => T;
+  /** Message du commit GitHub. */
+  message: (data: T) => string;
   pushDelayMs?: number;
 }
 
-export interface PersistedState {
-  local: DataFile | null;
-  base: RemoteFile | null;
+export interface PersistedState<T> {
+  local: T | null;
+  base: RemoteFile<T> | null;
   dirty: boolean;
   lastSyncAt: string | null;
 }
 
 const MAX_ATTEMPTS = 5;
 
-export function createSyncEngine(deps: EngineDeps) {
-  const data = signal<DataFile | null>(null);
+export function createSyncEngine<T>(deps: EngineDeps<T>) {
+  const data = signal<T | null>(null);
   const status = signal<SyncStatus>('loading');
   const error = signal<string | null>(null);
   const lastSyncAt = signal<string | null>(null);
 
-  let base: RemoteFile | null = null;
+  let base: RemoteFile<T> | null = null;
   let dirty = false;
   let queue: Promise<void> = Promise.resolve();
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -49,8 +51,8 @@ export function createSyncEngine(deps: EngineDeps) {
     return queue;
   }
 
-  async function adoptRemote(r: RemoteFile) {
-    if (dirty && data.value) data.value = mergeData(base?.data ?? null, data.value, r.data);
+  async function adoptRemote(r: RemoteFile<T>) {
+    if (dirty && data.value) data.value = deps.merge(base?.data ?? null, data.value, r.data);
     else data.value = r.data;
     base = r;
   }
@@ -62,8 +64,7 @@ export function createSyncEngine(deps: EngineDeps) {
       if (!sending || !base) return;
       const editsBefore = editsSinceSend;
       try {
-        const n = countItems(sending);
-        const sha = await deps.write(sending, base.sha, `Mise à jour depuis l'app (${n} article${n > 1 ? 's' : ''})`);
+        const sha = await deps.write(sending, base.sha, deps.message(sending));
         base = { data: sending, sha };
         if (editsSinceSend === editsBefore) dirty = false;
       } catch (e) {
@@ -114,7 +115,7 @@ export function createSyncEngine(deps: EngineDeps) {
   }
 
   /** Modifie les données. `fn` reçoit l'état courant et renvoie le nouvel état (sans muter l'ancien). */
-  function mutate(fn: (d: DataFile) => DataFile): void {
+  function mutate(fn: (d: T) => T): void {
     if (!data.value) return;
     data.value = fn(data.value);
     dirty = true;
@@ -139,4 +140,7 @@ export function createSyncEngine(deps: EngineDeps) {
   };
 }
 
-export type SyncEngine = ReturnType<typeof createSyncEngine>;
+export type SyncEngine<T> = ReturnType<typeof createSyncEngine<T>>;
+
+/** Ce qu'il faut pour afficher l'état d'une synchro, quel que soit le carnet. */
+export type SyncView = Pick<SyncEngine<unknown>, 'status' | 'error' | 'lastSyncAt' | 'sync' | 'hasPendingChanges'>;

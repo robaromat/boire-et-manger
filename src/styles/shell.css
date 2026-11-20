@@ -63,3 +63,7 @@
 .tuto-recette { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .tuto-recette .chip { background: var(--card); }
 .tuto-recette .tuto-fab { position: static; margin-left: auto; height: 46px; box-shadow: none; }
+.tuto-rec { display: grid; gap: 8px; }
+.tuto-rec .search { height: 44px; color: var(--ink); }
+.tuto-rec .rrow { padding: 6px 4px; border: 0; }
+.tuto-rec .rrow .cover { width: 48px; height: 48px; }

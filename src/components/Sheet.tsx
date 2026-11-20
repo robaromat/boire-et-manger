@@ -12,9 +12,15 @@ type Entry = { close: () => void; popped: boolean };
 const stack: Entry[] = [];
 let ownBacks = 0;
 
+let settled: (() => void)[] = [];
+
 window.addEventListener('popstate', () => {
   if (ownBacks > 0) {
     ownBacks--;
+    if (!ownBacks) {
+      settled.forEach((f) => f());
+      settled = [];
+    }
     return;
   }
   const top = stack[stack.length - 1];
@@ -26,15 +32,31 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') stack[stack.length - 1]?.close();
 });
 
+/**
+ * Attend que les panneaux qu'on vient de fermer aient retiré leur entrée d'historique. À appeler avant de naviguer
+ * juste après une fermeture : sinon le « retour » du panneau, qui arrive après, annulerait la navigation.
+ */
+export async function sheetsSettled(): Promise<void> {
+  await new Promise((r) => setTimeout(r, 0)); // laisse Preact démonter les panneaux
+  if (!ownBacks) return;
+  await new Promise<void>((resolve) => {
+    settled.push(resolve);
+    setTimeout(resolve, 500); // filet de sécurité
+  });
+}
+
 export function Sheet({
   onClose,
   label,
   full,
+  cls,
   children,
 }: {
   onClose: () => void;
   label: string;
   full?: boolean;
+  /** Classe en plus (ex. « cook » pour le mode cuisine). */
+  cls?: string;
   children: ComponentChildren;
 }) {
   const closeRef = useRef(onClose);
@@ -56,7 +78,7 @@ export function Sheet({
 
   return (
     <div class="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div class={`sheet${full ? ' full' : ''}`} role="dialog" aria-modal="true" aria-label={label}>
+      <div class={`sheet${full ? ' full' : ''}${cls ? ` ${cls}` : ''}`} role="dialog" aria-modal="true" aria-label={label}>
         {!full && <div class="grab" aria-hidden="true" />}
         {children}
       </div>

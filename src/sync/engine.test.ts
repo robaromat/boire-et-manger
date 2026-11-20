@@ -3,6 +3,9 @@ import { createSyncEngine, type PersistedState } from './engine';
 import { GitHubError } from './github';
 import type { DataFile } from '../model/types';
 import { clone, data, item, list } from './fixtures';
+import { mergeData } from './merge';
+
+const COMMON = { merge: mergeData, message: () => 'test' };
 
 /** Ajoute un article à la première liste (sans muter). */
 const add = (id: string) => (d: DataFile): DataFile => ({
@@ -39,8 +42,9 @@ function fakeRemote(initial: DataFile) {
 }
 
 function engineFor(remote: ReturnType<typeof fakeRemote>) {
-  let stored: PersistedState | undefined;
-  return createSyncEngine({
+  let stored: PersistedState<DataFile> | undefined;
+  return createSyncEngine<DataFile>({
+    ...COMMON,
     read: remote.read,
     write: remote.write,
     load: async () => stored,
@@ -100,8 +104,9 @@ describe('moteur de synchro', () => {
 
   it("récupère au démarrage d'une modification restée en attente (app fermée hors ligne)", async () => {
     const remote = fakeRemote(start);
-    let stored: PersistedState | undefined;
-    const mk = () => createSyncEngine({
+    let stored: PersistedState<DataFile> | undefined;
+    const mk = () => createSyncEngine<DataFile>({
+      ...COMMON,
       read: remote.read, write: remote.write,
       load: async () => stored, save: async (s) => { stored = clone(s); }, pushDelayMs: 1_000_000,
     });
@@ -119,7 +124,8 @@ describe('moteur de synchro', () => {
 
   it("signale clairement un jeton refusé", async () => {
     const remote = fakeRemote(start);
-    const e = createSyncEngine({
+    const e = createSyncEngine<DataFile>({
+      ...COMMON,
       read: async () => { throw new GitHubError('auth', 'Jeton GitHub refusé', 401); },
       write: remote.write, load: async () => undefined, save: async () => {},
     });

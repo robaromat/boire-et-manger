@@ -10,6 +10,18 @@ import type { DataFile, HistoryEntry, Item, QtyPart, RayonId, ShopList } from '.
 export interface Entry {
   name: string;
   qty: QtyPart[];
+  /** Recette d'origine : l'article gardera « pour : … ». */
+  pour?: { rid: string; title: string };
+}
+
+function withSource(i: Item, e: Entry, created: boolean): Item {
+  if (!e.pour) return i;
+  const cur = i.pour ?? [];
+  const same = cur.find((s) => s.rid === e.pour!.rid);
+  const pour = same
+    ? cur.map((s) => (s === same ? { ...s, qty: mergeQty(s.qty, e.qty) } : s))
+    : [...cur, { rid: e.pour.rid, title: e.pour.title, qty: e.qty, created }];
+  return { ...i, pour };
 }
 
 type Ctx = { now?: string; makeId?: (p: 'i' | 'l') => string };
@@ -59,26 +71,74 @@ export function addEntries(d: DataFile, listId: string, entries: Entry[], ctx: C
     const idx = items.findIndex((i) => !i.checked && normalizeName(i.name) === key);
     if (idx >= 0) {
       const ex = items[idx]!;
-      items[idx] = { ...ex, qty: mergeQty(ex.qty, e.qty), updatedAt: now };
+      items[idx] = withSource({ ...ex, qty: mergeQty(ex.qty, e.qty), updatedAt: now }, e, false);
       ids.push(ex.id);
       continue;
     }
     const known = history[key];
     const rayon = classify(e.name, history);
-    const item: Item = {
-      id: idOf(ctx, 'i'),
-      name: known?.name ?? e.name,
-      qty: e.qty,
-      rayon,
-      checked: false,
-      addedAt: now,
-      updatedAt: now,
-    };
+    const item: Item = withSource(
+      {
+        id: idOf(ctx, 'i'),
+        name: known?.name ?? e.name,
+        qty: e.qty,
+        rayon,
+        checked: false,
+        addedAt: now,
+        updatedAt: now,
+      },
+      e,
+      true,
+    );
     items = [...items, item];
     history = remember(history, item.name, rayon);
     ids.push(item.id);
   }
   return { data: { ...mapList(d, listId, (l) => ({ ...l, items })), history }, ids };
+}
+
+/** Retire la part d'une quantité (même unité : soustraction ; partie sans nombre : retirée si identique). */
+export function subtractQty(a: QtyPart[], b: QtyPart[]): QtyPart[] {
+  let out = a.map((p) => ({ ...p }));
+  for (const p of b) {
+    const k = out.findIndex((q) => q.u === p.u && (q.n == null) === (p.n == null));
+    if (k < 0) continue;
+    const q = out[k]!;
+    if (q.n != null && p.n != null && q.n - p.n > 1e-9) out[k] = { ...q, n: Math.round((q.n - p.n) * 1000) / 1000 };
+    else out = out.filter((_, j) => j !== k);
+  }
+  return out;
+}
+
+/** Recettes présentes dans une liste (articles pas encore pris). */
+export function recipesInList(d: DataFile, listId: string): { rid: string; title: string; count: number }[] {
+  const out = new Map<string, { rid: string; title: string; count: number }>();
+  for (const i of d.lists.find((l) => l.id === listId)?.items ?? []) {
+    if (i.checked) continue;
+    for (const s of i.pour ?? []) {
+      const cur = out.get(s.rid) ?? { rid: s.rid, title: s.title, count: 0 };
+      cur.count++;
+      out.set(s.rid, cur);
+    }
+  }
+  return [...out.values()];
+}
+
+/** Retire une recette d'une liste : sa part de chaque article, et les articles qu'elle seule avait ajoutés. */
+export function removeRecipeFromList(d: DataFile, listId: string, rid: string, ctx: Ctx = {}): DataFile {
+  const now = nowOf(ctx);
+  return mapList(d, listId, (l) => ({
+    ...l,
+    items: l.items.flatMap((i) => {
+      const src = i.pour?.find((s) => s.rid === rid);
+      if (!src || i.checked) return [i];
+      // Si cette recette avait créé l'article, les recettes restantes en héritent (il partira avec la dernière).
+      const pour = i.pour!.filter((s) => s !== src).map((s) => ({ ...s, created: s.created || src.created }));
+      const qty = subtractQty(i.qty, src.qty);
+      if (src.created && !pour.length && !qty.length) return [];
+      return [{ ...i, qty, pour: pour.length ? pour : undefined, updatedAt: now }];
+    }),
+  }));
 }
 
 export function toggleItem(d: DataFile, id: string, ctx: Ctx = {}): DataFile {

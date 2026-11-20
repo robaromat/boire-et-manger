@@ -69,6 +69,52 @@ const ILLUS: Record<string, () => JSX.Element> = {
       </span>
     </div>
   ),
+  'recettes.carnet': () => (
+    <div class="tuto-rec">
+      <div class="search">
+        <Icon name="search" />
+        <span>poireau</span>
+      </div>
+      <div class="rrow">
+        <div class="cover">
+          <Icon name="book" />
+        </div>
+        <span class="t">
+          <b>Poireaux vinaigrette</b>
+          <span class="meta">
+            Entrée · contient <mark>Poireaux</mark>
+          </span>
+        </span>
+      </div>
+    </div>
+  ),
+  'recettes.ajout': () => (
+    <div class="tuto-recette">
+      <span class="chip">Photo</span>
+      <span class="chip">Lien</span>
+      <span class="chip">À la main</span>
+      <span class="fab tuto-fab">
+        <Icon name="plus" />
+        Recette
+      </span>
+    </div>
+  ),
+  'recettes.fiche': () => (
+    <div class="ractions">
+      <span class="act primary">
+        <Icon name="cart" />
+        Aux courses
+      </span>
+      <span class="act">
+        <Icon name="flame" />
+        Mode cuisine
+      </span>
+      <span class="act">
+        <Icon name="check" />
+        Je l’ai fait
+      </span>
+    </div>
+  ),
   'courses.panier': () => (
     <div>
       {row('cre', 'Œufs', '×6', true)}

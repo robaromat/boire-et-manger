@@ -23,6 +23,15 @@ export interface Item {
   checked: boolean; // true = « Dans le panier »
   addedAt: string; // ISO 8601
   updatedAt: string;
+  /** Recettes qui ont ajouté cet article (« pour : Curry »), avec leur part de la quantité. */
+  pour?: ItemSource[];
+}
+
+export interface ItemSource {
+  rid: string; // id de la recette (carnet) ou d'une lecture ponctuelle
+  title: string;
+  qty: QtyPart[];
+  created: boolean; // l'article a été créé par cette recette (il disparaît avec elle s'il ne reste rien)
 }
 
 export interface ShopList {

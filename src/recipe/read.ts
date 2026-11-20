@@ -16,6 +16,11 @@ export interface Recipe {
   title: string;
   servings: number | null;
   ingredients: RecipeIngredient[];
+  /** Pour le carnet de recettes : catégorie, tags, étapes (« {n} » = quantité de l'ingrédient n), source repérée. */
+  category?: string | null;
+  tags?: string[];
+  steps?: string[];
+  source?: string | null;
 }
 
 export class RecipeError extends Error {
@@ -27,7 +32,7 @@ export class RecipeError extends Error {
   }
 }
 
-const PROMPT = `Tu lis une recette (photo de livre, fiche, capture d'écran, ou texte d'une page web) pour préparer une liste de courses en français.
+const PROMPT = `Tu lis une recette (photo de livre, fiche, capture d'écran, ou texte d'une page web) pour la ranger dans un carnet de recettes et préparer une liste de courses, en français.
 Renvoie :
 - title : le titre de la recette (ou une courte description si absent).
 - servings : le nombre de portions/personnes indiqué, sinon null.
@@ -39,6 +44,13 @@ Renvoie :
   - unit : « g », « kg », « ml », « cl », « l » quand c'est un poids ou un volume ; sinon l'unité telle qu'écrite au singulier
     ou pluriel naturel (« gousses », « c. à s. », « c. à c. », « pincée », « bouquet », « boîte ») ; null pour un simple nombre d'unités.
 Ignore l'eau du robinet. Si un ingrédient apparaît plusieurs fois, additionne. Si l'image contient plusieurs recettes, prends la principale.
+- category : une seule parmi « Apéro », « Entrée », « Plat », « Dessert », « Boisson », « Bases & sauces », « Petit-déj & goûter ».
+- tags : 0 à 3 mots-clés courts en minuscules, seulement s'ils sont évidents (« végé », « rapide », « sans gluten »…).
+- steps : les étapes, fidèles à la recette, une phrase ou deux chacune, sans numéro. Quand une étape cite la quantité d'un
+  ingrédient de la liste, remplace seulement cette quantité et son unité par {n}, où n est la position de l'ingrédient
+  dans ingredients en partant de 0 (« Verser 400 ml de lait de coco » → « Verser {1} de lait de coco »). Garde les durées
+  et températures telles quelles. Tableau vide si la recette ne donne pas d'étapes.
+- source : le titre du livre, du magazine, du site ou du compte visible sur l'image ou la page, sinon null.
 Si l'image n'est pas une recette, renvoie une liste d'ingrédients vide.`;
 
 const SCHEMA = {
@@ -47,10 +59,14 @@ const SCHEMA = {
   schema: {
     type: 'object',
     additionalProperties: false,
-    required: ['title', 'servings', 'ingredients'],
+    required: ['title', 'servings', 'ingredients', 'category', 'tags', 'steps', 'source'],
     properties: {
       title: { type: 'string' },
       servings: { type: ['integer', 'null'] },
+      category: { type: 'string', enum: ['Apéro', 'Entrée', 'Plat', 'Dessert', 'Boisson', 'Bases & sauces', 'Petit-déj & goûter'] },
+      tags: { type: 'array', items: { type: 'string' } },
+      steps: { type: 'array', items: { type: 'string' } },
+      source: { type: ['string', 'null'] },
       ingredients: {
         type: 'array',
         items: {
@@ -99,7 +115,7 @@ ${input.text}`;
   return {
     model,
     ...(withReasoning && model.startsWith('gpt-5') ? { reasoning_effort: 'minimal' } : {}),
-    max_completion_tokens: 4000,
+    max_completion_tokens: 8000,
     response_format: { type: 'json_schema', json_schema: SCHEMA },
     messages: [
       { role: 'system', content: PROMPT },
@@ -148,7 +164,21 @@ export function normalizeRecipe(r: Recipe): Recipe {
     .filter((i) => i.name);
   if (!ingredients.length) throw new RecipeError('empty', 'Aucun ingrédient trouvé sur cette image. Essaie une photo plus nette, bien cadrée sur la liste des ingrédients.');
   const servings = typeof r.servings === 'number' && r.servings > 0 ? Math.round(r.servings) : null;
-  return { title: r.title?.trim() || 'Recette', servings, ingredients };
+  const n = ingredients.length;
+  const steps = (r.steps ?? [])
+    .map((x) => String(x).trim())
+    .filter(Boolean)
+    // Référence à un ingrédient qui n'existe pas : on retire les accolades plutôt que d'afficher « {12} ».
+    .map((x) => x.replace(/\{(\d+)\}/g, (m, k) => (Number(k) < n ? m : '')));
+  return {
+    title: r.title?.trim() || 'Recette',
+    servings,
+    ingredients,
+    category: r.category ?? null,
+    tags: (r.tags ?? []).map((t) => String(t).trim().toLowerCase()).filter(Boolean).slice(0, 5),
+    steps,
+    source: r.source?.trim() || null,
+  };
 }
 
 /** Exécute une requête et traduit les erreurs HTTP en messages lisibles. */

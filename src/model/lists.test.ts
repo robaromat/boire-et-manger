@@ -5,6 +5,7 @@ import {
 } from './lists';
 import { parseEntries, parseQtyText } from './qty';
 import { data, hist, item, list } from '../sync/fixtures';
+import type { DataFile } from './types';
 
 let n = 0;
 const ctx = { now: '2026-11-20T10:00:00Z', makeId: (p: 'i' | 'l') => `${p}_${++n}` };
@@ -116,5 +117,24 @@ describe('quantité saisie dans la fiche', () => {
     ['', []],
   ])('« %s »', (t, q) => {
     expect(parseQtyText(t)).toEqual(q);
+  });
+});
+
+describe('recettes dans une liste (« pour : … »)', () => {
+  const ctx = { now: '2026-11-20T10:00:00.000Z', makeId: (() => { let n = 0; return (p: string) => `${p}_${++n}`; })() };
+  const base = (): DataFile => ({ schemaVersion: 1, rayonOrder: [], history: {}, lists: [{ id: 'l1', name: 'Bio', createdAt: '', items: [] }] });
+
+  it('garde la recette d’origine et retire sa part seulement', async () => {
+    const { addEntries, removeRecipeFromList, recipesInList } = await import('./lists');
+    let d = addEntries(base(), 'l1', [{ name: 'Lait', qty: [{ n: 1000, u: 'ml' }] }], ctx).data;
+    d = addEntries(d, 'l1', [{ name: 'Lait', qty: [{ n: 400, u: 'ml' }], pour: { rid: 'r1', title: 'Curry' } }, { name: 'Oignons', qty: [{ n: 2, u: null }], pour: { rid: 'r1', title: 'Curry' } }], ctx).data;
+    d = addEntries(d, 'l1', [{ name: 'Oignons', qty: [{ n: 1, u: null }], pour: { rid: 'r2', title: 'Soupe' } }], ctx).data;
+    expect(recipesInList(d, 'l1').map((r) => [r.title, r.count])).toEqual([['Curry', 2], ['Soupe', 1]]);
+    d = removeRecipeFromList(d, 'l1', 'r1', ctx);
+    const items = d.lists[0]!.items;
+    expect(items.find((i) => i.name === 'Lait')?.qty).toEqual([{ n: 1000, u: 'ml' }]);
+    expect(items.find((i) => i.name === 'Oignons')?.qty).toEqual([{ n: 1, u: null }]);
+    d = removeRecipeFromList(d, 'l1', 'r2', ctx);
+    expect(d.lists[0]!.items.map((i) => i.name)).toEqual(['Lait']);
   });
 });

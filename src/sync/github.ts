@@ -13,8 +13,8 @@ export interface RepoRef {
   path?: string; // courses.json par défaut
 }
 
-export interface RemoteFile {
-  data: DataFile;
+export interface RemoteFile<T = DataFile> {
+  data: T;
   sha: string;
 }
 
@@ -41,8 +41,8 @@ function headers(token: string): HeadersInit {
   };
 }
 
-const contentsUrl = (r: RepoRef) =>
-  `${API}/repos/${encodeURIComponent(r.owner)}/${encodeURIComponent(r.repo)}/contents/${r.path ?? COURSES_FILE}`;
+const contentsUrl = (r: RepoRef, path = r.path ?? COURSES_FILE) =>
+  `${API}/repos/${encodeURIComponent(r.owner)}/${encodeURIComponent(r.repo)}/contents/${path}`;
 
 /** Fichier du carnet Courses dans le dépôt de données (data.json avant le passage à Boire & Manger). */
 export const COURSES_FILE = 'courses.json';
@@ -73,11 +73,12 @@ interface ContentsResponse {
   encoding?: string;
 }
 
-export async function readDataFile(r: RepoRef): Promise<RemoteFile> {
-  const res = await request(contentsUrl(r), { headers: headers(r.token) });
+/** Lit un carnet JSON du dépôt. `parse` vérifie le format (null = format inattendu). */
+export async function readJsonFile<T>(r: RepoRef, path: string, parse: (raw: unknown) => T | null): Promise<RemoteFile<T>> {
+  const res = await request(contentsUrl(r, path), { headers: headers(r.token) });
   const body = (await res.json()) as ContentsResponse;
   let text: string;
-  if (body.encoding === 'base64' && body.content !== undefined) {
+  if (body.encoding === 'base64' && body.content !== undefined && body.content !== '') {
     text = base64ToUtf8(body.content);
   } else {
     // Au-delà de 1 Mo, l'API Contents ne renvoie pas le contenu : on passe par le blob.
@@ -92,26 +93,54 @@ export async function readDataFile(r: RepoRef): Promise<RemoteFile> {
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new GitHubError('invalid', "courses.json n'est pas un JSON valide.");
+    throw new GitHubError('invalid', `${path} n'est pas un JSON valide.`);
   }
-  const data = parseDataFile(parsed);
-  if (!data) throw new GitHubError('invalid', "courses.json n'a pas le format attendu (schemaVersion 1, listes et historique).");
+  const data = parse(parsed);
+  if (!data) throw new GitHubError('invalid', `${path} n'a pas le format attendu.`);
   return { data, sha: body.sha };
 }
 
-/** Écrit le fichier. `sha` = version lue précédemment (absent pour créer le fichier). Renvoie le nouveau sha. */
-export async function writeDataFile(r: RepoRef, data: DataFile, sha: string | null, message: string): Promise<string> {
-  const res = await request(contentsUrl(r), {
+/** Écrit un carnet JSON. `sha` = version lue précédemment (absent pour créer le fichier). Renvoie le nouveau sha. */
+export async function writeJsonFile<T>(r: RepoRef, path: string, data: T, sha: string | null, message: string): Promise<string> {
+  const res = await request(contentsUrl(r, path), {
     method: 'PUT',
     headers: { ...headers(r.token), 'Content-Type': 'application/json' },
     body: JSON.stringify({
       message,
-      content: utf8ToBase64(serialize(data)),
+      content: utf8ToBase64(JSON.stringify(data, null, 2) + '\n'),
       ...(sha ? { sha } : {}),
     }),
   });
   const body = (await res.json()) as { content: { sha: string } };
   return body.content.sha;
+}
+
+export const readDataFile = (r: RepoRef): Promise<RemoteFile> => readJsonFile(r, r.path ?? COURSES_FILE, parseDataFile);
+
+export const writeDataFile = (r: RepoRef, data: DataFile, sha: string | null, message: string) =>
+  writeJsonFile(r, r.path ?? COURSES_FILE, data, sha, message);
+
+/** Envoie un fichier binaire (photo). Déjà présent (même nom) : considéré comme envoyé. */
+export async function putBinary(r: RepoRef, path: string, base64: string, message: string): Promise<void> {
+  try {
+    await request(contentsUrl(r, path), {
+      method: 'PUT',
+      headers: { ...headers(r.token), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, content: base64 }),
+    });
+  } catch (e) {
+    // 422 « sha wasn't supplied » : le fichier existe déjà (envoi précédent interrompu après coup).
+    if (e instanceof GitHubError && e.kind === 'conflict') return;
+    throw e;
+  }
+}
+
+/** Télécharge un fichier binaire (photo) du dépôt privé. */
+export async function getBinary(r: RepoRef, path: string): Promise<Blob> {
+  const res = await request(contentsUrl(r, path), {
+    headers: { ...headers(r.token), Accept: 'application/vnd.github.raw' },
+  });
+  return res.blob();
 }
 
 /** Nombre total d'articles, toutes listes confondues. */

@@ -50,9 +50,30 @@ export const TUTO_STEPS: TutoStep[] = [
   {
     id: 'courses.recette',
     tab: 'courses',
-    since: '2026-11-20',
+    since: '2026-11-20T10:08',
     title: 'Une recette, ses ingrédients',
-    text: "Le bouton Recette lit une photo, une capture d'écran ou le lien d'une page. Tu choisis les portions, tu décoches ce que tu as déjà, et les ingrédients rejoignent la liste. Tu peux aussi partager une page de recette vers l'app depuis Chrome.",
+    text: "Le bouton Recette lit une photo, une capture d'écran ou le lien d'une page. Tu choisis les portions, tu décoches ce que tu as déjà, et les ingrédients rejoignent la liste avec « pour : … ». Coche « Garder dans le carnet » pour la retrouver dans Recettes ; la pastille de la recette en haut de la liste retire ses ingrédients d'un coup.",
+  },
+  {
+    id: 'recettes.carnet',
+    tab: 'recettes',
+    since: '2026-11-20T10:08',
+    title: 'Ton carnet de recettes',
+    text: "Cherche par nom ou par ingrédient (« poireau »). L'accueil propose ce qui est de saison, ce que tu n'as pas fait depuis longtemps et ce qui reste à tester. Le bouton à côté de la recherche filtre par note et par tag.",
+  },
+  {
+    id: 'recettes.ajout',
+    tab: 'recettes',
+    since: '2026-11-20T10:08',
+    title: 'Ajouter une recette',
+    text: "« + Recette » lit une photo de livre, une capture d'écran ou le lien d'une page, ou te laisse la saisir à la main. Tu vérifies la fiche avant de l'enregistrer : la saison se calcule d'après les fruits et légumes. Depuis Chrome, partage une page de recette vers B&M.",
+  },
+  {
+    id: 'recettes.fiche',
+    tab: 'recettes',
+    since: '2026-11-20T10:08',
+    title: 'Cuisiner, puis noter',
+    text: "Sur une fiche : les portions recalculent tout, jusque dans les étapes. « Mode cuisine » garde l'écran allumé en grand ; « Aux courses » envoie les ingrédients dans une liste ; « Je l'ai fait » ajoute une note, un commentaire et une photo au journal.",
   },
 ];
 

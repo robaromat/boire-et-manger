@@ -17,6 +17,15 @@ const PATHS = {
   bottle: '<path d="M10 2h4v4.5c0 1 2.5 2.4 2.5 5.5v9a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9c0-3.1 2.5-4.5 2.5-5.5z"/><path d="M7.5 14h9"/>',
   pin: '<path d="M12 22s7-6.1 7-12a7 7 0 0 0-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/>',
   cart: '<path d="M4 9h16l-2.2 10.2a2 2 0 0 1-2 1.6H8.2a2 2 0 0 1-2-1.6z"/><path d="M8.5 9l3-5M15.5 9l-3-5"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+  filter: '<path d="M4 6h16M7 12h10M10 18h4"/>',
+  more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  flame: '<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.4 1.2-3.9 2.4-5 .2 1.6 1 2.6 2.1 3 .4-3-.2-5.5.5-8z"/>',
+  link: '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
+  pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  share: '<path d="M12 3v12M7.5 7.5L12 3l4.5 4.5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
 } as const;
 
 export type IconName = keyof typeof PATHS;

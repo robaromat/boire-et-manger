@@ -27,6 +27,20 @@
   --r-hyg: #8a5aa8;
   --r-div: #8b8a80;
 
+  /* Saisons (carnet Recettes) */
+  --s-printemps: #5f9a45;
+  --s-ete: #d08a1f;
+  --s-automne: #b0532b;
+  --s-hiver: #4f7896;
+  --s-ink: #ffffff;
+
+  /* Mode cuisine : toujours sombre */
+  --cook-bg: #1b1f1b;
+  --cook-ink: #f2eee3;
+  --cook-muted: #a2a597;
+  --cook-line: #343a33;
+  --cook-hi: #f0b14d;
+
   --f-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
   --f-ui: 'Figtree', 'Segoe UI', system-ui, sans-serif;
 }
@@ -57,5 +71,13 @@
     --r-surg: #8cc8ea;
     --r-hyg: #b98ad6;
     --r-div: #a3a296;
+
+    --s-printemps: #8cc56f;
+    --s-ete: #f0b14d;
+    --s-automne: #ec9468;
+    --s-hiver: #8cb4d6;
+    --s-ink: #111111;
+    --cook-bg: #0f120f;
+    --cook-line: #2c322b;
   }
 }

@@ -14,8 +14,12 @@ import { navigate } from '../router';
 import { engine, mutate } from '../sync/store';
 import { ItemSheet } from './ItemSheet';
 import { ListSheet } from './ListSheet';
-import { RecipeSheet } from './RecipeSheet';
-import { consumeSharedLink, sharedLink } from '../share';
+import { RecipeSheet, type KeepRequest } from './RecipeSheet';
+import { newId } from '../lib/ids';
+import { recipesInList, removeRecipeFromList } from '../model/lists';
+import { saveNewRecipe, sendToCourses } from '../recettes/actions';
+import { draftFromRead } from '../recettes/fromRead';
+import '../styles/recettes.css';
 
 // Écran principal (maquette v1) : onglets magasins, articles rangés par rayon, panier, saisie rapide en bas.
 
@@ -49,7 +53,7 @@ type SheetState =
   | { kind: 'item'; id: string }
   | { kind: 'newList' }
   | { kind: 'list'; id: string }
-  | { kind: 'recipe'; link?: string }
+  | { kind: 'recipe' }
   | null;
 
 export function Lists() {
@@ -69,14 +73,6 @@ export function Lists() {
     writeLocal(LAST_LIST_KEY, id);
     mainRef.current?.scrollTo({ top: 0 });
   };
-
-  // Lien de recette reçu par le menu Partager : on ouvre la lecture dès que les listes sont là.
-  const shared = sharedLink.value;
-  useEffect(() => {
-    if (!shared || !d?.lists.length) return;
-    consumeSharedLink();
-    setSheet({ kind: 'recipe', link: shared });
-  }, [shared, !!d?.lists.length]);
 
   // Met en évidence les articles qui viennent d'être ajoutés, et les fait défiler à l'écran.
   useEffect(() => {
@@ -198,6 +194,7 @@ export function Lists() {
 
       <div class="main-wrap">
         <div class="shop-main" ref={mainRef}>
+          <PourBar data={d} listId={list.id} />
           {!todo.length && (
             <div class="empty">
               <b>{done.length ? 'Tout est dans le panier' : 'Liste vide'}</b>
@@ -251,22 +248,16 @@ export function Lists() {
         <RecipeSheet
           data={d}
           listId={list.id}
-          initialLink={sheet.link}
           onClose={() => setSheet(null)}
-          onAdd={(destId, entries, title) => {
-            const dest = d.lists.find((l) => l.id === destId);
-            let ids: string[] = [];
-            mutateWithUndo(
-              (cur) => {
-                const r = addEntries(cur, destId, entries);
-                ids = r.ids;
-                return r.data;
-              },
-              `${plural(entries.length, 'article')} de « ${title} » ${entries.length > 1 ? 'ajoutés' : 'ajouté'} à ${dest?.name ?? ''}`,
-            );
+          onAdd={(destId, entries, title, keep) => {
             setSheet(null);
-            if (destId !== list.id) selectList(destId);
-            setFlashIds(ids);
+            void (async () => {
+              // « Garder dans le carnet » : la recette rejoint Recettes, et les articles renvoient vers elle.
+              const rid = keep ? await keepRecipe(keep) : newId('x');
+              const ids = sendToCourses(destId, entries, title, rid);
+              if (destId !== list.id) selectList(destId);
+              setFlashIds(ids);
+            })();
           }}
         />
       )}
@@ -315,6 +306,38 @@ export function Lists() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+async function keepRecipe(k: KeepRequest): Promise<string> {
+  const draft = draftFromRead(k.recipe, k.source.kind === 'photo' ? { kind: 'photo' } : { kind: 'link', url: k.source.url, label: k.source.host });
+  try {
+    return await saveNewRecipe(draft, { sourceFile: k.source.kind === 'photo' ? k.source.file : null });
+  } catch {
+    showSnack('La recette n’a pas pu être rangée dans le carnet (photo illisible).');
+    return newId('x');
+  }
+}
+
+/** Recettes dont les ingrédients sont dans la liste ; ✕ retire la part de la recette (avec Annuler). */
+function PourBar({ data, listId }: { data: DataFile; listId: string }) {
+  const rs = recipesInList(data, listId);
+  if (!rs.length) return null;
+  return (
+    <div class="pour-bar" aria-label="Recettes dans cette liste">
+      <span class="lbl">Recettes</span>
+      {rs.map((r) => (
+        <span key={r.rid} class="pour-chip">
+          <span>{r.title}</span>
+          <button
+            aria-label={`Retirer les ingrédients de « ${r.title} »`}
+            onClick={() => mutateWithUndo((cur) => removeRecipeFromList(cur, listId, r.rid), `Ingrédients de « ${r.title} » retirés`)}
+          >
+            <Icon name="close" />
+          </button>
+        </span>
+      ))}
     </div>
   );
 }
@@ -399,7 +422,10 @@ function Row(props: { item: Item; flash: boolean; onToggle: () => void; onEdit: 
           onClick={() => !suppressClick.current && props.onEdit()}
           aria-label={`Modifier ${item.name}${q ? `, ${q}` : ''}`}
         >
-          <span class="name">{item.name}</span>
+          <span class="name">
+            {item.name}
+            {item.pour?.length ? <span class="pour">pour : {item.pour.map((p) => p.title).join(', ')}</span> : null}
+          </span>
           {q && <span class="qty">{q}</span>}
         </button>
       </div>

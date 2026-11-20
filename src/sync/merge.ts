@@ -18,7 +18,7 @@ import type { DataFile, HistoryEntry, Item, ShopList } from '../model/types';
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-function mergeEntities<T>(
+export function mergeEntities<T>(
   base: ReadonlyMap<string, T>,
   local: ReadonlyMap<string, T>,
   remote: ReadonlyMap<string, T>,

@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Icon } from '../components/Icon';
 import { Sheet } from '../components/Sheet';
@@ -14,10 +15,19 @@ import { settings } from '../settings/settings';
 // Recette en photo ou par lien : choisir l'image (ou coller l'adresse) → lecture par ChatGPT → revue (portions, cases, liste de destination) → ajout.
 // Un seul panneau pour tout le parcours (le bouton Retour le ferme à n'importe quelle étape).
 
+/** D'où vient la recette lue : gardé pour la ranger dans le carnet si on coche « Garder dans le carnet ». */
+export type ReadSource = { kind: 'photo'; file: File } | { kind: 'link'; url: string; host: string };
+
+/** Recette à garder dans le carnet en même temps que l'ajout aux courses. */
+export interface KeepRequest {
+  recipe: Recipe;
+  source: ReadSource;
+}
+
 type Phase =
   | { kind: 'pick'; error?: string }
   | { kind: 'loading'; preview: string | null; what: string }
-  | { kind: 'review'; recipe: Recipe };
+  | { kind: 'review'; recipe: Recipe; source: ReadSource };
 
 export function RecipeSheet(props: {
   data: DataFile;
@@ -25,9 +35,10 @@ export function RecipeSheet(props: {
   /** Lien reçu par le menu Partager d'une autre app : la lecture démarre tout de suite. */
   initialLink?: string;
   onClose: () => void;
-  onAdd: (destId: string, entries: Entry[], title: string) => void;
+  onAdd: (destId: string, entries: Entry[], title: string, keep: KeepRequest | null) => void;
 }) {
   const key = settings.value.openaiKey;
+  const [keep, setKeep] = useState(false);
   const [phase, setPhase] = useState<Phase>({ kind: 'pick' });
   const [link, setLink] = useState(props.initialLink ?? '');
   const abort = useRef<AbortController | null>(null);
@@ -46,14 +57,15 @@ export function RecipeSheet(props: {
   const onLink = async (raw: string) => {
     const url = normalizeUrl(raw);
     if (!url) return setPhase({ kind: 'pick', error: 'Colle l’adresse complète de la page (elle commence par https://).' });
-    setPhase({ kind: 'loading', preview: null, what: new URL(url).hostname.replace(/^www\./, '') });
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    setPhase({ kind: 'loading', preview: null, what: host });
     const ctrl = new AbortController();
     abort.current = ctrl;
     try {
       const page = await fetchRecipeText(url);
       if (ctrl.signal.aborted) return;
       const recipe = await readRecipe(key, { text: page.text }, { signal: ctrl.signal });
-      if (!ctrl.signal.aborted) setPhase({ kind: 'review', recipe });
+      if (!ctrl.signal.aborted) setPhase({ kind: 'review', recipe, source: { kind: 'link', url, host } });
     } catch (e) {
       if (!ctrl.signal.aborted) fail(e);
     }
@@ -70,7 +82,7 @@ export function RecipeSheet(props: {
     try {
       const url = await imageToDataUrl(file);
       const recipe = await readRecipe(key, url, { signal: ctrl.signal });
-      if (!ctrl.signal.aborted) setPhase({ kind: 'review', recipe });
+      if (!ctrl.signal.aborted) setPhase({ kind: 'review', recipe, source: { kind: 'photo', file } });
     } catch (e) {
       if (!ctrl.signal.aborted) fail(e);
     } finally {
@@ -124,9 +136,23 @@ export function RecipeSheet(props: {
   }
 
   if (phase.kind === 'review') {
+    const { recipe, source } = phase;
     return (
-      <Sheet onClose={props.onClose} label={`Recette : ${phase.recipe.title}`} full>
-        <Review {...props} recipe={phase.recipe} />
+      <Sheet onClose={props.onClose} label={`Recette : ${recipe.title}`} full>
+        <Review
+          {...props}
+          recipe={recipe}
+          onAdd={(dest, entries, title) => props.onAdd(dest, entries, title, keep ? { recipe, source } : null)}
+          extra={
+            <label class="switch">
+              <span>
+                Garder dans le carnet de recettes
+                <small>Avec ses étapes et la {source.kind === 'photo' ? 'photo' : 'page'} d’origine, à retrouver dans Recettes</small>
+              </span>
+              <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.currentTarget.checked)} />
+            </label>
+          }
+        />
       </Sheet>
     );
   }
@@ -186,15 +212,20 @@ export function RecipeSheet(props: {
   );
 }
 
-function Review(props: {
+/** Écran de revue avant l'ajout aux courses (aussi utilisé depuis une fiche du carnet). */
+export function Review(props: {
   data: DataFile;
   listId: string;
   recipe: Recipe;
   onClose: () => void;
   onAdd: (destId: string, entries: Entry[], title: string) => void;
+  heading?: string;
+  extra?: ComponentChildren;
+  /** Nombre de portions de départ (celui choisi sur la fiche). */
+  portions?: number;
 }) {
   const { data, recipe } = props;
-  const [portions, setPortions] = useState(recipe.servings ?? 4);
+  const [portions, setPortions] = useState(props.portions ?? recipe.servings ?? 4);
   const [dest, setDest] = useState(props.listId);
   const lines = useMemo(() => reviewLines(data, dest, recipe, portions), [data, dest, recipe, portions]);
   // Basiques (« toujours à la maison ») décochés d'office.
@@ -205,7 +236,7 @@ function Review(props: {
   return (
     <>
       <div class="sheet-head">
-        <h2>{recipe.title}</h2>
+        <h2>{props.heading ?? recipe.title}</h2>
         <button class="btn ghost small" onClick={props.onClose}>
           Annuler
         </button>
@@ -270,6 +301,7 @@ function Review(props: {
           ))}
         </select>
       </div>
+      {props.extra}
       <button
         class="btn primary block"
         disabled={!count}

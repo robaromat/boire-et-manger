@@ -9,17 +9,19 @@ export const TABS = ['courses', 'recettes', 'cave', 'souvenirs'] as const;
 export type TabId = (typeof TABS)[number];
 export const TAB_LABELS: Record<TabId, string> = { courses: 'Courses', recettes: 'Recettes', cave: 'Cave', souvenirs: 'Souvenirs' };
 
-export type Route = { name: 'tab'; tab: TabId } | { name: 'settings' };
+/** `sub` : fiche ouverte dans le carnet (#/recettes/r_…). */
+export type Route = { name: 'tab'; tab: TabId; sub?: string } | { name: 'settings' };
 
 export function parseHash(hash: string): Route {
-  const [a] = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  const [a, b] = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   if (a === 'reglages') return { name: 'settings' };
-  if ((TABS as readonly string[]).includes(a ?? '')) return { name: 'tab', tab: a as TabId };
+  if ((TABS as readonly string[]).includes(a ?? '')) return b ? { name: 'tab', tab: a as TabId, sub: decodeURIComponent(b) } : { name: 'tab', tab: a as TabId };
   return { name: 'tab', tab: 'courses' };
 }
 
 export function hrefOf(r: Route): string {
   if (r.name === 'settings') return '#/reglages';
+  if (r.sub) return `#/${r.tab}/${encodeURIComponent(r.sub)}`;
   return r.tab === 'courses' ? '#/' : `#/${r.tab}`;
 }
 
@@ -27,7 +29,11 @@ export function hrefOf(r: Route): string {
 function initialRoute(): Route {
   const bare = location.hash.replace(/^#\/?/, '') === '';
   if (!bare) return parseHash(location.hash);
-  if (/[?&](url|text)=/.test(location.search)) return { name: 'tab', tab: 'courses' }; // lien partagé : recette → Courses
+  if (/[?&](url|text)=/.test(location.search)) {
+    // Lien partagé depuis une autre app : une recette à ranger dans le carnet.
+    history.replaceState(history.state, '', location.pathname + location.search + '#/recettes');
+    return { name: 'tab', tab: 'recettes' };
+  }
   const r: Route = { name: 'tab', tab: startTab() };
   if (r.tab !== 'courses') history.replaceState(history.state, '', hrefOf(r));
   return r;

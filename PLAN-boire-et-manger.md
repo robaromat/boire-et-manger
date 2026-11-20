@@ -42,7 +42,13 @@ chaque carnet.
   « Garder dans le carnet de recettes » branchée en phase 2.
 - PWA hors ligne (service worker, installation), finitions, essais sur le Fold.
 
-### Phase 2 — Recettes
+### Phase 2 — Recettes ✅ (20/11/2026, v1.1.0)
+- ✅ Maquette validée le 20/11/2026 (https://claude.ai/artifact/5GaMF9Sk4sng37CnwTC1s7).
+- Livré : carnet `recettes.json` (synchro et fusion propres), magasin de photos `photos/` (grande + vignette, file
+  d'envoi hors ligne), accueil (de saison / pas faites depuis longtemps / à tester, recherche par ingrédient, filtres,
+  tri), fiche, ajout photo / lien / Partager / à la main, mode cuisine, journal, « Aux courses » avec « pour : … » et
+  retrait d'une recette depuis la liste, case « Garder dans le carnet » dans Courses, tuto Recettes, Fold côte à côte.
+- Reste : export PDF (le partage texte est fait). Un lien partagé vers l'app ouvre désormais Recettes (plus Courses).
 - 7 catégories (Apéro, Entrée, Plat, Dessert, Boisson, Bases & sauces, Petit-déj & goûter) + tags libres.
 - Ajout : photo / galerie, lien (fiche recette schema.org, sinon ChatGPT, sinon texte collé), menu Partager d'Android.
 - Photo source + photo du plat. Saison calculée depuis les ingrédients (calendrier FR), modifiable ;

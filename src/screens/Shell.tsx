@@ -6,6 +6,7 @@ import { TABS, TAB_LABELS, openTab, type TabId } from '../router';
 import { hasPending, maybeOpenTuto, tutoSeen } from '../tuto/state';
 import { TutoSheet } from '../tuto/TutoSheet';
 import { Lists } from './Lists';
+import { Recettes } from './recettes/Recettes';
 import { applyUpdate, updateReady } from '../pwa';
 import { sharedLink } from '../share';
 
@@ -14,7 +15,7 @@ import { sharedLink } from '../share';
 
 const ICONS: Record<TabId, IconName> = { courses: 'cart', recettes: 'book', cave: 'bottle', souvenirs: 'pin' };
 
-export function Shell({ tab }: { tab: TabId }) {
+export function Shell({ tab, sub }: { tab: TabId; sub?: string }) {
   // Pas de visite par-dessus une recette reçue par le menu Partager : elle attendra le prochain passage.
   useEffect(() => {
     if (!sharedLink.value) maybeOpenTuto(tab);
@@ -23,7 +24,9 @@ export function Shell({ tab }: { tab: TabId }) {
 
   return (
     <div class="shell" data-tab={tab}>
-      <div class="shell-body">{tab === 'courses' ? <Lists /> : <Soon tab={tab} />}</div>
+      <div class="shell-body">
+        {tab === 'courses' ? <Lists /> : tab === 'recettes' ? <Recettes openId={sub} /> : <Soon tab={tab} />}
+      </div>
       <nav class="tabbar" aria-label="Carnets">
         {TABS.map((t) => (
           <button key={t} aria-current={t === tab ? 'page' : undefined} onClick={() => openTab(t)}>
@@ -49,17 +52,7 @@ export function Shell({ tab }: { tab: TabId }) {
   );
 }
 
-const SOON: Record<Exclude<TabId, 'courses'>, { phase: number; text: string; items: string[] }> = {
-  recettes: {
-    phase: 2,
-    text: 'Ton carnet de recettes, rangé par catégorie et cherchable par ingrédient et par saison.',
-    items: [
-      'Ajout par photo, capture d’écran, lien ou menu Partager',
-      'Saison calculée à partir des ingrédients',
-      'Journal « Je l’ai fait » avec note et commentaires',
-      'Mode cuisine et envoi des ingrédients vers les Courses',
-    ],
-  },
+const SOON: Record<'cave' | 'souvenirs', { phase: number; text: string; items: string[] }> = {
   cave: {
     phase: 3,
     text: 'Ta cave et tes dégustations, pour remplacer CellarTracker et Vivino.',
@@ -77,7 +70,7 @@ const SOON: Record<Exclude<TabId, 'courses'>, { phase: number; text: string; ite
   },
 };
 
-function Soon({ tab }: { tab: Exclude<TabId, 'courses'> }) {
+function Soon({ tab }: { tab: 'cave' | 'souvenirs' }) {
   const s = SOON[tab];
   return (
     <div class="shop">
