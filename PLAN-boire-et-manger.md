@@ -96,5 +96,11 @@ chaque carnet.
   lien « Ouvrir dans Google Maps ».
 - Vues : Carte, Liste, Livre (book chronologique de photos).
 
+### Ajouts du 20/11/2026 (v1.4.0)
+- « Challenger la recette » (éditeur et menu ⋯ d'une fiche) : ChatGPT relève les quantités incohérentes, cuissons ou
+  temps déconnants, portions improbables, ingrédients oubliés ; alertes et doutes, rien n'est modifié tout seul.
+- « Donne-moi des infos » sur la fiche d'un vin : carafe, température de service, verre, où en est le vin, un mot
+  sur le domaine ; gardé dans la fiche (`service`), marqué « estimation ChatGPT », « Redemander » pour actualiser.
+
 ### Plus tard (hors v1)
 Planning des repas, recherche globale, minuteurs, deuxième utilisateur, import Mapstr.

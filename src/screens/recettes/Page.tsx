@@ -16,6 +16,8 @@ import { Review } from '../RecipeSheet';
 import { Cover, SeasonChips, Stars, fmtNote, shortDate, todayIso } from './bits';
 import { CookMode } from './CookMode';
 import { Editor } from './Editor';
+import { CheckSheet } from './CheckSheet';
+import { settings } from '../../settings/settings';
 
 // Fiche d'une recette (maquette validée) : photo, saison, ajustements, portions, étapes, source, journal,
 // et les trois actions Aux courses / Mode cuisine / Je l'ai fait.
@@ -29,6 +31,7 @@ type SheetKind =
   | { k: 'cook' }
   | { k: 'edit' }
   | { k: 'viewer'; photo: string }
+  | { k: 'check' }
   | null;
 
 export function Page({ r, onBack, startCourses }: { r: Recipe; onBack: () => void; startCourses?: boolean }) {
@@ -224,6 +227,14 @@ export function Page({ r, onBack, startCourses }: { r: Recipe; onBack: () => voi
                 Modifier la recette<small>Titre, catégorie, saison, ingrédients, étapes, tags</small>
               </span>
             </button>
+            {settings.value.openaiKey && (
+              <button class="opt" onClick={() => setSheet({ k: 'check' })}>
+                <Icon name="alert" />
+                <span>
+                  Challenger la recette<small>ChatGPT vérifie les quantités, cuissons et temps</small>
+                </span>
+              </button>
+            )}
             <button class="opt" onClick={() => void share()}>
               <Icon name="share" />
               <span>
@@ -257,6 +268,7 @@ export function Page({ r, onBack, startCourses }: { r: Recipe; onBack: () => voi
       {sheet?.k === 'courses' && <CoursesSheet r={r} portions={portions} onClose={close} />}
       {sheet?.k === 'cook' && <CookMode r={r} portions={portions} onQuit={() => setSheet({ k: 'done', afterCook: true })} onClose={close} />}
       {sheet?.k === 'viewer' && <Viewer photo={sheet.photo} onClose={close} />}
+      {sheet?.k === 'check' && <CheckSheet text={recipeAsText(r, r.servings ?? 0)} onClose={close} onEdit={() => setSheet({ k: 'edit' })} />}
     </>
   );
 }

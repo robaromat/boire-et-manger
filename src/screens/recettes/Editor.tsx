@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { Icon } from '../../components/Icon';
 import { Sheet } from '../../components/Sheet';
-import { parseTags, qtyFromEditor, qtyToEditor, stepsFromEditor, stepsToEditor, type RecipeDraft } from '../../recettes/ops';
+import { parseTags, qtyFromEditor, qtyToEditor, recipeAsText, stepsFromEditor, stepsToEditor, type RecipeDraft } from '../../recettes/ops';
 import { computeSeasons } from '../../recettes/season';
-import { CATEGORIES, SEASONS, SEASON_LABELS, type Category, type Season } from '../../recettes/types';
+import { CATEGORIES, SEASONS, SEASON_LABELS, type Category, type Recipe, type Season } from '../../recettes/types';
+import { settings } from '../../settings/settings';
+import { CheckSheet } from './CheckSheet';
 
 // Fiche à vérifier (après lecture d'une photo ou d'un lien), à remplir (saisie à la main) ou à modifier.
 // Dans les étapes, « [Ingrédient] » remplace la quantité de cet ingrédient : elle suivra le nombre de portions.
@@ -34,6 +36,7 @@ export function Editor(props: {
   const [seasons, setSeasons] = useState<Season[] | null>(i.seasons);
   const [alsoCourses, setAlsoCourses] = useState(false);
   const [cover, setCover] = useState<File | null>(null);
+  const [checking, setChecking] = useState<string | null>(null);
   const coverUrl = useMemo(() => (cover ? URL.createObjectURL(cover) : null), [cover]);
   useEffect(() => () => void (coverUrl && URL.revokeObjectURL(coverUrl)), [coverUrl]);
 
@@ -65,6 +68,13 @@ export function Editor(props: {
       alsoCourses,
       coverFile: cover,
     });
+  };
+
+  // La fiche telle qu'elle est en ce moment à l'écran, en texte, pour « Challenger la recette ».
+  const asText = () => {
+    const n = parseInt(servings, 10);
+    const r = { ...i, title: title.trim() || 'Recette', servings: n > 0 ? n : null, ingredients, steps: stepsFromEditor(steps, ingredients), adjustments: '', journal: [] } as unknown as Recipe;
+    return recipeAsText({ ...r, source: { kind: 'manual' } }, r.servings ?? 0);
   };
 
   const heading = props.mode === 'edit' ? 'Modifier la recette' : props.mode === 'manual' ? 'Nouvelle recette' : 'Vérifier la recette';
@@ -176,10 +186,17 @@ export function Editor(props: {
           Ajouter aussi les ingrédients aux courses
         </label>
       )}
+      {settings.value.openaiKey && (
+        <button class="btn ghost block" disabled={!ingredients.length} onClick={() => setChecking(asText())}>
+          <Icon name="alert" />
+          Challenger la recette
+        </button>
+      )}
       <button class="btn primary block" disabled={!title.trim() || !category} onClick={save}>
         {props.mode === 'edit' ? 'Enregistrer' : 'Enregistrer dans le carnet'}
       </button>
       {!category && title.trim() && <p class="note center">Choisis une catégorie pour enregistrer.</p>}
+      {checking && <CheckSheet text={checking} onClose={() => setChecking(null)} />}
     </Sheet>
   );
 }

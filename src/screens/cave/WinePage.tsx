@@ -7,6 +7,7 @@ import { RecipeError } from '../../recipe/read';
 import { navigate } from '../../router';
 import { settings } from '../../settings/settings';
 import { draftFromLabel, readLabel } from '../../cave/label';
+import { wineAdvice } from '../../cave/advice';
 import {
   addWish, avgRating, bottles, deleteWine, knownPlaces, knownShelves, removeExit, setStock, slotLabel, takeBottle, todayIso, updateExit, updateWine,
   vintageLabel, windowState, wineName, type WineDraft,
@@ -264,6 +265,8 @@ export function WinePage({ w, onBack, start }: { w: Wine; onBack: () => void; st
               </div>
             </section>
           )}
+
+          <ServiceBlock w={w} />
 
           {(w.pairRecipes.length > 0 || w.pairings.length > 0) && (
             <section class="block">
@@ -830,5 +833,94 @@ function WindowSheet({ w, onClose }: { w: Wine; onClose: () => void }) {
         Enregistrer
       </button>
     </Sheet>
+  );
+}
+
+const DECANT = { oui: 'Oui', non: 'Non', facultatif: 'Facultatif' } as const;
+
+/** « Donne-moi des infos » : carafe, température, verre, où en est le vin ; demandé à ChatGPT et gardé dans la fiche. */
+function ServiceBlock({ w }: { w: Wine }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const key = settings.value.openaiKey;
+  const s = w.service;
+  if (!s && !key) return null;
+  const ask = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const service = await wineAdvice(key, w);
+      mutateCave((d) => updateWine(d, w.id, { service }));
+    } catch (e) {
+      setError(e instanceof RecipeError ? e.message : 'ChatGPT n’a pas pu répondre.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section class="block">
+      <h2>
+        Service {s && <span class="wtag est">estimation ChatGPT</span>}
+      </h2>
+      {s ? (
+        <>
+          <div class="kv">
+            <span>Carafe</span>
+            <span>
+              <b>{DECANT[s.decant]}</b>
+              {s.decantDetail ? ` · ${s.decantDetail}` : ''}
+            </span>
+            <span>Température</span>
+            <span>
+              <b>{s.temperature}</b>
+              {s.temperatureTip ? ` · ${s.temperatureTip}` : ''}
+            </span>
+            {s.glass && (
+              <>
+                <span>Verre</span>
+                <span>{s.glass}</span>
+              </>
+            )}
+            {s.timing && (
+              <>
+                <span>Aujourd’hui</span>
+                <span>{s.timing}</span>
+              </>
+            )}
+          </div>
+          {s.about && (
+            <p class="note" style="margin-top:10px;font-size:14px;color:var(--ink)">
+              {s.about}
+            </p>
+          )}
+          {s.tips.length > 0 && (
+            <ul class="svc-tips">
+              {s.tips.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          )}
+          {key && (
+            <button class="btn ghost small" style="margin-top:8px" disabled={busy} onClick={() => void ask()}>
+              <Icon name="sparkle" />
+              {busy ? 'ChatGPT réfléchit…' : 'Redemander'}
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <p class="note">Faut-il le carafer, à quelle température le servir, dans quel verre, où il en est aujourd’hui.</p>
+          <button class="btn primary" style="margin-top:8px" disabled={busy} onClick={() => void ask()}>
+            <Icon name="sparkle" />
+            {busy ? 'ChatGPT réfléchit…' : 'Donne-moi des infos'}
+          </button>
+        </>
+      )}
+      {error && (
+        <p class="note" role="alert" style="color:var(--danger);margin-top:6px">
+          {error}
+        </p>
+      )}
+    </section>
   );
 }

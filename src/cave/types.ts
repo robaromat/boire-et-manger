@@ -62,6 +62,19 @@ export interface Exit {
 export const ESTIMABLE = ['window', 'grapes', 'style', 'pairings', 'region'] as const;
 export type Estimable = (typeof ESTIMABLE)[number];
 
+/** Conseils de service donnés par ChatGPT (« Donne-moi des infos »), gardés dans la fiche. */
+export interface WineService {
+  decant: 'oui' | 'non' | 'facultatif';
+  decantDetail: string;
+  temperature: string;
+  temperatureTip: string;
+  glass: string;
+  timing: string;
+  about: string;
+  tips: string[];
+  at: string; // date de la demande
+}
+
 export interface Wine {
   id: string; // « w_… »
   domaine: string;
@@ -87,6 +100,7 @@ export interface Wine {
   stock: Slot[];
   history: Exit[]; // le plus récent en premier
   ctId?: string; // iWine CellarTracker
+  service?: WineService;
   createdAt: string;
   updatedAt: string;
 }

@@ -196,3 +196,18 @@
 .pour-chip button { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); flex: none; }
 .pour-chip button .i { width: 16px; height: 16px; }
 .row-text .name .pour { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-top: 2px; text-decoration: none; }
+
+/* Challenger la recette */
+.check-verdict { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; font-size: 17px; }
+.check-verdict .i { flex: none; }
+.check-verdict.ok { background: color-mix(in srgb, var(--a-courses) 14%, var(--card)); color: var(--a-courses); }
+.check-verdict.warn { background: color-mix(in srgb, var(--s-ete) 16%, var(--card)); color: color-mix(in srgb, var(--s-ete) 70%, var(--ink)); }
+.check-verdict.bad { background: color-mix(in srgb, var(--danger) 14%, var(--card)); color: var(--danger); }
+.check-list { display: grid; gap: 8px; }
+.check-item { padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); border-left-width: 1px; background: var(--bg); display: grid; gap: 4px; }
+.check-item.alerte { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+.check-item.doute { border-color: color-mix(in srgb, var(--s-ete) 45%, var(--line)); }
+.check-item p { margin: 0; line-height: 1.45; }
+.check-k { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.check-item.alerte .check-k { color: var(--danger); }
+.check-sugg { color: var(--muted); }
