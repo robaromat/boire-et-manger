@@ -15,6 +15,7 @@ import type { Place, Visit } from '../../souvenirs/types';
 import { caveEngine, mutateCave, mutateSouvenirs, souvenirsEngine } from '../../sync/store';
 import { Dot, recipeList } from '../cave/bits';
 import { Shot } from './bits';
+import type { SouvenirDraft } from '../../souvenirs/pending';
 
 // « J'y suis allé » (maquette validée) : date, avec qui, note, commentaire, photos, vins bus, « à reprendre ».
 // Pour un nouveau lieu, le lieu n'est créé qu'à l'enregistrement de la visite.
@@ -28,6 +29,8 @@ export function VisitSheet(props: {
   visit?: Visit;
   /** Photo d'où vient le lieu : sa date et elle-même sont reprises. */
   fromPhoto?: { file: File; date: string | null };
+  /** Souvenir proposé après une recette ou un vin. */
+  prefill?: SouvenirDraft;
   onClose: () => void;
   onSaved: (placeId: string) => void;
 }) {
@@ -35,15 +38,15 @@ export function VisitSheet(props: {
   const v = props.visit;
   const cave = caveEngine.value?.data.value;
   const people = useMemo(() => (souvenirsEngine.value?.data.value ? knownPeople(souvenirsEngine.value.data.value) : []), []);
-  const [date, setDate] = useState(v?.date ?? props.fromPhoto?.date ?? todayIso());
+  const [date, setDate] = useState(v?.date ?? props.fromPhoto?.date ?? props.prefill?.date ?? todayIso());
   const [who, setWho] = useState<string[]>(v?.with ?? []);
   const [extraPeople, setExtraPeople] = useState<string[]>([]);
   const [newWho, setNewWho] = useState('');
   const [rating, setRating] = useState<number | null>(v?.rating ?? null);
-  const [comment, setComment] = useState(v?.comment ?? '');
-  const [photos, setPhotos] = useState<string[]>(v?.photos ?? []);
+  const [comment, setComment] = useState(v?.comment ?? props.prefill?.comment ?? '');
+  const [photos, setPhotos] = useState<string[]>(v?.photos ?? props.prefill?.photos ?? []);
   const [files, setFiles] = useState<File[]>(props.fromPhoto ? [props.fromPhoto.file] : []);
-  const [wines, setWines] = useState<string[]>(v?.wines.map((w) => w.wineId) ?? []);
+  const [wines, setWines] = useState<string[]>((v?.wines ?? props.prefill?.links ?? []).map((w) => w.wineId));
   const [pending, setPending] = useState<PendingWine[]>([]);
   const [wineText, setWineText] = useState('');
   const [newColor, setNewColor] = useState<WineColor>('rouge');
@@ -121,7 +124,7 @@ export function VisitSheet(props: {
           placeId = a.id;
         }
         placeName = next.places.find((p) => p.id === placeId)?.name ?? name;
-        const draft = { date: date || todayIso(), with: who, rating, comment: comment.trim(), photos: [...photos, ...newPhotos], wines: v?.wines ?? [], auteur: 'Robin' };
+        const draft = { date: date || todayIso(), with: who, rating, comment: comment.trim(), photos: [...photos, ...newPhotos], wines: v?.wines ?? props.prefill?.links ?? [], auteur: 'Robin' };
         if (v) next = updateVisit(next, placeId, v.id, draft);
         else {
           const r = addVisit(next, placeId, draft);
@@ -132,7 +135,7 @@ export function VisitSheet(props: {
         return next;
       });
       // Les vins bus, dans la Cave
-      let links = v?.wines ?? [];
+      let links = v?.wines ?? props.prefill?.links ?? [];
       mutateCave((c) => {
         const r = syncVisitWines(c, { id: placeId, name: placeName }, { date: date || todayIso(), rating }, links, wineIds);
         links = r.wines;

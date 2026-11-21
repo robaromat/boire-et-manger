@@ -146,3 +146,5 @@
 .tuto-souv { display: flex; gap: 28px; justify-content: center; padding: 10px 0 4px; }
 
 .smap-fail { display: flex; gap: 10px; align-items: center; justify-content: space-between; color: var(--ink); }
+.prow.addq b { color: var(--accent); }
+.snack button + button { margin-left: 6px; }

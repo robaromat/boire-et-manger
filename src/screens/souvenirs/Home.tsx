@@ -30,7 +30,7 @@ const mapApi: { current: MapApi | null } = { current: null };
 
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 
-export function Home({ data, openId, onOpen, onAdd }: { data: SouvenirsFile | null; openId?: string; onOpen: (id: string) => void; onAdd: () => void }) {
+export function Home({ data, openId, onOpen, onAdd }: { data: SouvenirsFile | null; openId?: string; onOpen: (id: string) => void; onAdd: (query?: string) => void }) {
   const e = souvenirsEngine.value;
   const q = query.value.trim();
   const pass = (p: Place) =>
@@ -63,7 +63,7 @@ export function Home({ data, openId, onOpen, onAdd }: { data: SouvenirsFile | nu
         <b>Pas encore de souvenir</b>
         Ajoute un resto, un bar ou une adresse gourmande : autour de toi, par son nom, ou depuis une photo.
         <div>
-          <button class="btn primary" style="margin-top:14px" onClick={onAdd}>
+          <button class="btn primary" style="margin-top:14px" onClick={() => onAdd()}>
             <Icon name="plus" />
             Premier lieu
           </button>
@@ -103,9 +103,20 @@ export function Home({ data, openId, onOpen, onAdd }: { data: SouvenirsFile | nu
               <Icon name="back" class="flip" />
             </button>
           )}
-          {!list.length && <p class="spreview">Aucun lieu ne correspond.</p>}
+          {!list.length &&
+            (q ? (
+              <button class="spreview" onClick={() => onAdd(q)}>
+                <Icon name="plus" />
+                <span class="t">
+                  <b>Ajouter « {q} »</b>
+                  <span class="meta">Le chercher dans OpenStreetMap</span>
+                </span>
+              </button>
+            ) : (
+              <p class="spreview">Aucun lieu ne correspond.</p>
+            ))}
         </div>
-        <button class={`fab${sel ? ' up' : ''}`} onClick={onAdd}>
+        <button class={`fab${sel ? ' up' : ''}`} onClick={() => onAdd()}>
           <Icon name="plus" />
           Lieu
         </button>
@@ -144,6 +155,7 @@ export function Home({ data, openId, onOpen, onAdd }: { data: SouvenirsFile | nu
           <PlaceRow key={p.id} p={p} current={p.id === openId} onOpen={() => onOpen(p.id)} />
         ))}
         {!list.length && <p class="hint">Aucun lieu ne correspond.</p>}
+        {q && <AddFromSearch q={q} onAdd={onAdd} />}
       </>
     );
   } else {
@@ -200,7 +212,7 @@ export function Home({ data, openId, onOpen, onAdd }: { data: SouvenirsFile | nu
       {controls(used)}
       <div class="rec-scroll">{body}</div>
       {data && (
-        <button class="fab" onClick={onAdd}>
+        <button class="fab" onClick={() => onAdd()}>
           <Icon name="plus" />
           Lieu
         </button>
@@ -266,5 +278,20 @@ function controls(used: PlaceType[]) {
           ))}
       </div>
     </div>
+  );
+}
+
+/** En fin de liste : le lieu tapé n'est pas (ou pas seulement) dans tes souvenirs ? On le cherche dans OpenStreetMap. */
+function AddFromSearch({ q, onAdd }: { q: string; onAdd: (query?: string) => void }) {
+  return (
+    <button class="prow addq" onClick={() => onAdd(q)}>
+      <span class="ptile todo">
+        <Icon name="plus" />
+      </span>
+      <span class="t">
+        <b>Ajouter « {q} »</b>
+        <span class="meta">Le chercher dans OpenStreetMap</span>
+      </span>
+    </button>
   );
 }

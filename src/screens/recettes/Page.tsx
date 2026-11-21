@@ -16,6 +16,7 @@ import { Review } from '../RecipeSheet';
 import { Cover, SeasonChips, Stars, fmtNote, shortDate, todayIso } from './bits';
 import { CookMode } from './CookMode';
 import { Editor } from './Editor';
+import { snackWithSouvenir } from '../../souvenirs/pending';
 import { CheckSheet } from './CheckSheet';
 import { settings } from '../../settings/settings';
 
@@ -420,7 +421,7 @@ function DoneSheet({ r, afterCook, onClose }: { r: Recipe; afterCook?: boolean; 
         return pid && asCover ? updateRecipe(next, r.id, { cover: pid }) : next;
       });
       onClose();
-      showSnack('Ajouté au journal');
+      snackWithSouvenir('Ajouté au journal', { title: r.title, date: date || todayIso(), comment: [r.title, comment.trim()].filter(Boolean).join(' : '), photos: pid ? [pid] : [], links: [] });
     } catch {
       setBusy(false);
       showSnack('Photo illisible : réessaie avec une autre.');

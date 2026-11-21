@@ -6,19 +6,20 @@ interface SnackState {
   id: number;
   text: string;
   undo?: () => void;
+  action?: { label: string; run: () => void };
 }
 
 const current = signal<SnackState | null>(null);
 let timer: ReturnType<typeof setTimeout> | undefined;
 let seq = 0;
 
-export function showSnack(text: string, undo?: () => void): void {
+export function showSnack(text: string, undo?: () => void, action?: { label: string; run: () => void }): void {
   clearTimeout(timer);
   const id = ++seq;
-  current.value = { id, text, undo };
+  current.value = { id, text, undo, action };
   timer = setTimeout(() => {
     if (current.value?.id === id) current.value = null;
-  }, undo ? 5000 : 3000);
+  }, action ? 7000 : undo ? 5000 : 3000);
 }
 
 export function Snack() {
@@ -35,6 +36,16 @@ export function Snack() {
           }}
         >
           Annuler
+        </button>
+      )}
+      {s.action && (
+        <button
+          onClick={() => {
+            s.action?.run();
+            current.value = null;
+          }}
+        >
+          {s.action.label}
         </button>
       )}
     </div>

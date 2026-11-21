@@ -208,24 +208,26 @@ export async function nearbyPlaces(
   servers: string[] = OVERPASS_SERVERS,
 ): Promise<OsmPlace[]> {
   const data = overpassQuery(lat, lon, radius);
-  for (const url of servers) {
-    // Chaque serveur a 20 secondes ; une panne, un refus ou un délai dépassé : on passe au suivant.
-    const ctrl = new AbortController();
-    const stop = () => ctrl.abort();
-    signal?.addEventListener('abort', stop);
-    const timer = setTimeout(stop, 20000);
-    try {
-      const res = await fetch(url, { method: 'POST', body: new URLSearchParams({ data }), signal: ctrl.signal });
-      if (res.ok) {
+  // Tous les serveurs en même temps, 25 secondes au plus : le premier qui répond l'emporte, les autres sont annulés.
+  const ctrl = new AbortController();
+  const stop = () => ctrl.abort();
+  signal?.addEventListener('abort', stop);
+  const timer = setTimeout(stop, 25000);
+  try {
+    return await Promise.any(
+      servers.map(async (url) => {
+        const res = await fetch(url, { method: 'POST', body: new URLSearchParams({ data }), signal: ctrl.signal });
+        if (!res.ok) throw new Error(String(res.status));
         const body = (await res.json()) as { elements?: OverpassEl[] };
         return fromOverpass(body.elements ?? []);
-      }
-    } catch {
-      if (signal?.aborted) throw new DOMException('Annulé', 'AbortError');
-    } finally {
-      clearTimeout(timer);
-      signal?.removeEventListener('abort', stop);
-    }
+      }),
+    );
+  } catch {
+    if (signal?.aborted) throw new DOMException('Annulé', 'AbortError');
+  } finally {
+    clearTimeout(timer);
+    ctrl.abort();
+    signal?.removeEventListener('abort', stop);
   }
   // Aucun serveur Overpass : on demande à Nominatim les grandes catégories autour du point.
   return nearbyByNominatim(lat, lon, radius, signal);

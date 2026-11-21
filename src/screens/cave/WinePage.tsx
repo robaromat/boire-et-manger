@@ -16,6 +16,7 @@ import { COLOR_LABELS, REASON_LABELS, WINE_LABEL_NAMES, isTasting, type Exit, ty
 import { caveEngine, mutateCave } from '../../sync/store';
 import { Cover, Stars, fmtNote, shortDate } from '../recettes/bits';
 import { Viewer } from '../recettes/Page';
+import { snackWithSouvenir } from '../../souvenirs/pending';
 import { Dot, REASON_ICONS, YEAR, recipeList, recipeTitle, whereText } from './bits';
 import { WineEditor } from './WineEditor';
 
@@ -593,9 +594,24 @@ function DrankSheet({ w, exitId, reason, onClose }: { w: Wine; exitId?: string; 
         where: outside ? where.trim() : '',
         ...(pid ? { photo: pid } : {}),
       };
-      mutateCave((d) => (exitId ? updateExit(d, w.id, exitId, patch) : takeBottle(d, w.id, { ...baseExit(reason), ...patch }).data));
+      let xid = exitId ?? '';
+      mutateCave((d) => {
+        if (exitId) return updateExit(d, w.id, exitId, patch);
+        const r = takeBottle(d, w.id, { ...baseExit(reason), ...patch });
+        xid = r.exitId;
+        return r.data;
+      });
       onClose();
-      showSnack(editing ? 'Dégustation modifiée' : 'Ajouté à tes dégustations');
+      const linked = !!x?.place;
+      if (editing || linked) showSnack(editing ? 'Dégustation modifiée' : 'Ajouté à tes dégustations');
+      else
+        snackWithSouvenir('Ajouté à tes dégustations', {
+          title: `${wineName(w)} ${vintageLabel(w)}`,
+          date: date || todayIso(),
+          comment: comment.trim(),
+          photos: pid ? [pid] : [],
+          links: xid ? [{ wineId: w.id, exitId: xid }] : [],
+        });
     } catch {
       setBusy(false);
       showSnack('Photo illisible : réessaie avec une autre.');

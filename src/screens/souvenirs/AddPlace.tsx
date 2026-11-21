@@ -10,6 +10,7 @@ import { mutateSouvenirs } from '../../sync/store';
 import { TYPE_ICONS, here, locate } from './bits';
 import { MapView, type MapApi } from './MapView';
 import { VisitSheet } from './VisitSheet';
+import type { SouvenirDraft } from '../../souvenirs/pending';
 
 // « + Lieu » (maquette validée) : autour de moi, chercher par nom, depuis une photo (GPS et date), point posé à la main.
 // Puis « J'y suis allé » (la visite) ou « À essayer ». Un lieu déjà enregistré est signalé et réutilisé.
@@ -27,12 +28,29 @@ type Phase =
 
 const draftFrom = (o: OsmPlace): PlaceDraft => ({ ...emptyPlaceDraft(), name: o.name, type: o.type, sub: o.sub, address: o.address, city: o.city, lat: o.lat, lon: o.lon, osm: o.osm });
 
-export function AddPlace({ data, onClose, onDone, initialSearch }: { data: SouvenirsFile; onClose: () => void; onDone: (id: string) => void; initialSearch?: boolean }) {
-  const [phase, setPhase] = useState<Phase>(initialSearch ? { k: 'results', title: 'Chercher un lieu', list: [], from: here.value, search: true } : { k: 'pick' });
-  const [q, setQ] = useState('');
+export function AddPlace({
+  data,
+  onClose,
+  onDone,
+  initialQuery,
+  draft: souvenir,
+}: {
+  data: SouvenirsFile;
+  onClose: () => void;
+  onDone: (id: string) => void;
+  /** Lieu tapé dans la recherche des souvenirs : cherché tout de suite dans OpenStreetMap. */
+  initialQuery?: string;
+  /** Souvenir proposé après une recette ou un vin. */
+  draft?: SouvenirDraft;
+}) {
+  const [phase, setPhase] = useState<Phase>(initialQuery ? { k: 'results', title: 'Chercher un lieu', list: [], from: here.value, search: true } : { k: 'pick' });
+  const [q, setQ] = useState(initialQuery ?? '');
   const abort = useRef<AbortController | null>(null);
   const mapApi = useRef<MapApi | null>(null);
-  useEffect(() => () => abort.current?.abort(), []);
+  useEffect(() => {
+    if (initialQuery) void search(initialQuery);
+    return () => abort.current?.abort();
+  }, []);
 
   const fail = (e: unknown) => setPhase({ k: 'pick', error: e instanceof OsmError ? e.message : e instanceof DOMException && e.name === 'AbortError' ? undefined : 'Recherche impossible : ' + String(e) });
   const ctrl = () => {
@@ -133,6 +151,7 @@ export function AddPlace({ data, onClose, onDone, initialSearch }: { data: Souve
         place={place}
         newPlace={place ? undefined : phase.draft}
         fromPhoto={phase.photo ? { file: phase.photo.file, date: phase.photo.date } : undefined}
+        prefill={souvenir}
         onClose={onClose}
         onSaved={onDone}
       />
@@ -265,7 +284,31 @@ export function AddPlace({ data, onClose, onDone, initialSearch }: { data: Souve
 
   return (
     <Sheet onClose={onClose} label="Ajouter un lieu">
-      <h2>Ajouter un lieu</h2>
+      <h2>{souvenir ? 'Créer un souvenir' : 'Ajouter un lieu'}</h2>
+      {souvenir && (
+        <>
+          <p class="note" style="margin-top:-8px">
+            {souvenir.title} · choisis où c’était.
+          </p>
+          {data.places.length > 0 && (
+            <div class="field">
+              <label>Dans un lieu de tes souvenirs</label>
+              <div class="choice" role="group" aria-label="Lieux de tes souvenirs">
+                {[...data.places]
+                  .sort((a, b) => (b.visits[0]?.date ?? b.createdAt).localeCompare(a.visits[0]?.date ?? a.createdAt))
+                  .slice(0, 10)
+                  .map((p) => (
+                    <button key={p.id} onClick={() => setPhase({ k: 'visit', placeId: p.id })}>
+                      <Icon name={TYPE_ICONS[p.type]} />
+                      {p.name}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
+          <label style="font-size:13px;font-weight:600;color:var(--muted)">Ou un nouveau lieu</label>
+        </>
+      )}
       {phase.error && (
         <div class="notice" role="alert">
           {phase.error}
