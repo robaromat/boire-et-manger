@@ -1,7 +1,7 @@
 import { newId } from '../lib/ids';
 import { csvRecords } from './csv';
 import { emptyWineDraft, findSame, norm, sameSlot, sortHistory } from './ops';
-import type { CaveFile, Exit, Reason, Slot, Wine, WineColor } from './types';
+import type { CaveFile, Exit, Reason, Slot, Wine, WineColor, WineLabel, Wish } from './types';
 
 // Import des exports CSV de CellarTracker (abonnement terminé le 14/12/2026).
 //   - « Inventory » (ou « My Cellar ») : une ligne par bouteille en stock (ou par vin avec Quantity), avec Location et Bin ;
@@ -10,7 +10,7 @@ import type { CaveFile, Exit, Reason, Slot, Wine, WineColor } from './types';
 // Les colonnes sont reconnues par leur nom, quel que soit l'ordre. La valeur estimée (Valuation) n'est jamais reprise.
 // Rien n'est enregistré avant l'écran de revue : buildCtImport prépare, applyCtImport écrit.
 
-export type CtFileKind = 'inventory' | 'consumed' | 'notes' | 'unknown';
+export type CtFileKind = 'inventory' | 'consumed' | 'notes' | 'wishlist' | 'unknown';
 
 export interface CtFile {
   name: string;
@@ -30,7 +30,9 @@ export interface CtImport {
   /** Vins prêts à écrire ; `id` déjà pris par un vin de la cave = fusion. Les lieux sont encore ceux de CellarTracker. */
   wines: Wine[];
   locations: CtLocation[];
-  stats: { wines: number; bottles: number; tastings: number; exits: number; noWindow: number; merged: number; elsewhere: number };
+  /** Liste d'envies (« Wish List »), sans celles déjà dans les envies. */
+  wishes: Wish[];
+  stats: { wines: number; bottles: number; tastings: number; exits: number; noWindow: number; merged: number; elsewhere: number; wishes: number };
 }
 
 type Rec = Record<string, string>;
@@ -45,6 +47,7 @@ const get = (r: Rec, ...keys: string[]) => {
 export function detectKind(r: Rec | undefined): CtFileKind {
   if (!r) return 'unknown';
   if ('iconsumed' in r || 'consumed' in r || 'consumptionnote' in r) return 'consumed';
+  if ('itaggedwine' in r || 'listname' in r) return 'wishlist';
   if ('tastingnotes' in r || 'inote' in r || 'tastingdate' in r) return 'notes';
   if ('iwine' in r && ('iinventory' in r || 'location' in r || 'bin' in r || 'quantity' in r)) return 'inventory';
   return 'unknown';
@@ -124,6 +127,11 @@ function ctSize(s: string): string {
   return s;
 }
 
+/** « Sans ajout de soufre », « zéro sulfite »… dans le nom de la cuvée. */
+export function ctLabels(...parts: string[]): WineLabel[] {
+  return /sans\s+(ajout\s+de\s+)?(soufre|sulfites?)|z[ée]ro\s+sulfites?|no\s+sulfites?\s+added/i.test(parts.join(' ')) ? ['sans-sulfites'] : [];
+}
+
 /** Fiche (sans stock ni historique) depuis une ligne de n'importe quel export. */
 function wineFrom(r: Rec): Omit<Wine, 'stock' | 'history'> {
   const vintage = int(get(r, 'vintage'));
@@ -143,8 +151,9 @@ function wineFrom(r: Rec): Omit<Wine, 'stock' | 'history'> {
     country: get(r, 'country'),
     size: ctSize(get(r, 'size')),
     grapes: get(r, 'varietal') || get(r, 'mastervarietal'),
-    from: from && from > 1800 ? from : null,
-    to: to && to > 1800 ? to : null,
+    labels: ctLabels(get(r, 'wine'), get(r, 'designation')),
+    from: from && from > 1800 && from < 2200 ? from : null,
+    to: to && to > 1800 && to < 2200 ? to : null,
     ctId: get(r, 'iwine') || undefined,
     createdAt: t,
     updatedAt: t,
@@ -189,7 +198,7 @@ export function buildCtImport(files: { name: string; text: string }[], existing:
       const w = wineOf(r);
       const n = 'quantity' in r ? (int(r.quantity!) ?? 0) : 1;
       if (n <= 0) continue;
-      const slot: Slot = { place: get(r, 'location'), shelf: get(r, 'bin'), n };
+      const slot: Slot = { place: get(r, 'location').replace(/^none$/i, ''), shelf: get(r, 'bin'), n };
       const cur = w.stock.find((s) => s.place === slot.place && s.shelf === slot.shelf);
       if (cur) cur.n += n;
       else w.stock.push(slot);
@@ -231,7 +240,7 @@ export function buildCtImport(files: { name: string; text: string }[], existing:
           ? notes.find((n) => !n.used && n.wine === keyOf(r) && n.date && days(n.date, date) <= 3)
           : undefined;
       if (note) note.used = true;
-      const place = get(r, 'location');
+      const place = get(r, 'location').replace(/^none$/i, '');
       const exit: Exit = {
         id: newId('x'),
         date,
@@ -270,6 +279,32 @@ export function buildCtImport(files: { name: string; text: string }[], existing:
     });
   }
 
+  // Liste d'envies
+  const wishes: Wish[] = [];
+  const knownWish = new Set(existing.wishes.map((w) => w.ctId).filter(Boolean));
+  for (const f of parsed.filter((x) => x.kind === 'wishlist'))
+    for (const r of f.recs) {
+      const ctId = `wl:${get(r, 'itaggedwine') || get(r, 'iwine')}`;
+      if (knownWish.has(ctId) || wishes.some((w) => w.ctId === ctId)) continue;
+      const w = wineFrom(r);
+      // La liste d'envies n'a pas de colonne « Producer » : le domaine, c'est le nom du vin sans l'appellation ni la cuvée.
+      if (!get(r, 'producer')) {
+        let dom = get(r, 'wine');
+        for (const x of [w.cuvee, get(r, 'designation'), get(r, 'vineyard'), w.appellation]) if (x) dom = dom.replace(x, ' ');
+        w.domaine = dom.replace(/\s+/g, ' ').trim() || get(r, 'wine');
+      }
+      wishes.push({
+        id: newId('e'),
+        domaine: w.domaine,
+        cuvee: w.cuvee,
+        color: w.color,
+        appellation: w.appellation,
+        why: [w.vintage ? String(w.vintage) : '', get(r, 'notes')].filter(Boolean).join(' · '),
+        ctId,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
   let merged = 0;
   const out = [...wines.values()].map((w) => {
     const same = existing.wines.find((x) => x.ctId && x.ctId === w.ctId) ?? findSame(existing, w);
@@ -281,6 +316,7 @@ export function buildCtImport(files: { name: string; text: string }[], existing:
     files: parsed.map((p) => ({ name: p.name, kind: p.kind, rows: p.recs.length })),
     wines: out,
     locations: [...locations.values()].sort((a, b) => b.bottles - a.bottles),
+    wishes,
     stats: {
       wines: out.filter((w) => w.stock.length).length,
       bottles: out.reduce((a, w) => a + w.stock.reduce((b, s) => b + s.n, 0), 0),
@@ -289,6 +325,7 @@ export function buildCtImport(files: { name: string; text: string }[], existing:
       noWindow: out.filter((w) => w.stock.length && w.from == null && w.to == null).length,
       merged,
       elsewhere: out.filter((w) => !w.stock.length).length,
+      wishes: wishes.length,
     },
   };
 }
@@ -330,10 +367,11 @@ export function applyCtImport(d: CaveFile, plan: CtImport, places: Record<string
       price: cur.price ?? w.price,
       bought: fill('bought'),
       ctId: cur.ctId ?? w.ctId,
+      labels: cur.labels?.length ? cur.labels : w.labels,
       stock: w.stock.length ? stock : cur.stock,
       history: sortHistory([...cur.history, ...history.filter((x) => !known.has(x.ctId))]),
       updatedAt: t,
     };
   }
-  return { ...d, wines };
+  return { ...d, wines, wishes: [...plan.wishes, ...d.wishes] };
 }

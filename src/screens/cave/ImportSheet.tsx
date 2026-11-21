@@ -14,6 +14,7 @@ const KIND_LABELS: Record<CtFileKind, string> = {
   inventory: 'ta cave (bouteilles en stock)',
   consumed: 'les bouteilles sorties',
   notes: 'tes notes de dégustation',
+  wishlist: 'ta liste d’envies',
   unknown: 'non reconnu, ignoré',
 };
 
@@ -34,7 +35,7 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
       const data = caveEngine.value?.data.value;
       if (!data) throw new Error('La cave n’est pas encore chargée.');
       const p = buildCtImport(texts, data);
-      if (!p.wines.length) {
+      if (!p.wines.length && !p.wishes.length) {
         setError(
           p.files.every((f) => f.kind === 'unknown')
             ? 'Ces fichiers ne ressemblent pas à des exports CellarTracker (colonnes iWine, Producer, Location…). Choisis les fichiers CSV exportés.'
@@ -82,7 +83,7 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
           <div class="opt static">
             <Icon name="glass" />
             <span>
-              2. Exporte aussi tes bouteilles bues et tes notes<small>Consumed (les sorties et leur raison) et Tasting Notes, en CSV aussi</small>
+              2. Exporte aussi tes bouteilles bues, tes notes et tes envies<small>Consumed (les sorties et leur raison), Tasting Notes et Wish List, en CSV aussi</small>
             </span>
           </div>
           <label class="opt">
@@ -134,6 +135,12 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
           <b>{s.exits}</b>
           <span>autres sorties (offertes, bouchonnées…)</span>
         </div>
+        {s.wishes > 0 && (
+          <div>
+            <b>{s.wishes}</b>
+            <span>envies</span>
+          </div>
+        )}
       </div>
       <section>
         <h3>Fichiers</h3>
@@ -145,6 +152,9 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
           ))}
         </ul>
         {!plan.files.some((f) => f.kind === 'inventory') && <p class="warnline">Pas de fichier de stock : aucune bouteille ne sera rangée en cave.</p>}
+        {plan.files.some((f) => f.kind === 'inventory') && plan.locations.length === 1 && !plan.locations[0]!.name && (
+          <p class="note">Ce fichier de stock ne donne pas les emplacements (export « My Cellar ») : les bouteilles iront dans la cave choisie ci-dessous. L’export « Inventory » de CellarTracker, lui, les donne.</p>
+        )}
       </section>
       {plan.locations.length > 0 && (
         <section>
@@ -223,7 +233,7 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
         </div>
       </section>
       <button class="btn primary block" onClick={doImport}>
-        Importer {plan.wines.length} vin{plan.wines.length > 1 ? 's' : ''}
+        Importer {plan.wines.length} vin{plan.wines.length > 1 ? 's' : ''}{plan.wishes.length ? ` et ${plan.wishes.length} envie${plan.wishes.length > 1 ? 's' : ''}` : ''}
       </button>
     </Sheet>
   );

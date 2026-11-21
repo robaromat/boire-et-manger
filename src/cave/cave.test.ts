@@ -300,3 +300,28 @@ describe('cave : caves et clayettes réglées', () => {
     expect(matchWine({ ...draft({ domaine: 'Gramenon', labels: ['bio'] }) }, 'bio')).toBe(true);
   });
 });
+
+describe('CellarTracker : exports réels (My Cellar, Wish List)', () => {
+  it('My Cellar sans emplacement, fenêtres 9999, sans soufre, liste d’envies', () => {
+    const cellar = [
+      'iWine,Type,Color,Category,Size,Currency,Value,Price,TotalQuantity,Quantity,Pending,Vintage,Wine,Locale,Producer,Varietal,MasterVarietal,Designation,Vineyard,Country,Region,SubRegion,Appellation,BeginConsume,EndConsume',
+      '769061,White - Sparkling,White,Sparkling,750ml,EUR,"48,57","43",2,2,0,1001,Drappier Champagne Brut Nature Zero Dosage Sans Ajout de Soufre,"France, Champagne",Drappier,Pinot Noir,Pinot Noir,Brut Nature Zero Dosage Sans Ajout de Soufre,Unknown,France,Champagne,Unknown,Champagne,2023,2026',
+      '4593088,Red,Red,Dry,750ml,EUR,"25,5","0",1,1,0,2019,Stéphanie Colinot Irancy Côte du Moutier,"France, Burgundy",Stéphanie Colinot,Pinot Blend,Pinot Noir,Côte du Moutier,Unknown,France,Burgundy,Côtes d’Auxerre,Irancy,9999,9999',
+    ].join(String.fromCharCode(10));
+    const wish = [
+      'iWine,iTaggedWine,ListName,Vintage,Type,Wine,Locale,Color,Category,Varietal,MasterVarietal,Designation,Vineyard,Country,Region,SubRegion,Appellation,Size,Notes,BeginConsume,EndConsume',
+      '1446996,1225809,*Wishlist,2009,Red,Domaine Brazey Pascal et Fils Mercurey Les Montots,"France, Burgundy",Red,Dry,Pinot Noir,Pinot Noir,Unknown,Les Montots,France,Burgundy,Côte Chalonnaise,Mercurey,750ml,"Bu chez plume",2013,2016',
+    ].join(String.fromCharCode(10));
+    const plan = buildCtImport([{ name: 'My Cellar.csv', text: cellar }, { name: 'My Wish List.csv', text: wish }], emptyCaveFile());
+    expect(plan.files.map((f) => f.kind)).toEqual(['inventory', 'wishlist']);
+    const drap = plan.wines.find((w) => w.ctId === '769061')!;
+    expect([drap.labels, drap.price, drap.stock]).toEqual([['sans-sulfites'], 43, [{ place: '', shelf: '', n: 2 }]]);
+    const irancy = plan.wines.find((w) => w.ctId === '4593088')!;
+    expect([irancy.from, irancy.to, irancy.price]).toEqual([null, null, null]);
+    expect(plan.wishes.map((e) => [e.domaine, e.cuvee, e.appellation, e.why])).toEqual([['Domaine Brazey Pascal et Fils', 'Les Montots', 'Mercurey', '2009 · Bu chez plume']]);
+    const d = applyCtImport(emptyCaveFile(), plan, { '': 'En attente' });
+    expect(d.wines.find((w) => w.ctId === '769061')!.stock).toEqual([{ place: 'En attente', shelf: '', n: 2 }]);
+    expect(d.wishes).toHaveLength(1);
+    expect(buildCtImport([{ name: 'w.csv', text: wish }], d).wishes).toHaveLength(0);
+  });
+});

@@ -130,6 +130,7 @@ export interface Wish {
   appellation: string;
   why: string;
   wineId?: string; // vin déjà en fiche (« Racheter »)
+  ctId?: string; // CellarTracker, pour ne pas importer deux fois
   createdAt: string;
 }
 
