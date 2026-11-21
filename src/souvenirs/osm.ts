@@ -7,7 +7,13 @@ import type { PlaceType } from './types';
 // Seuls le texte cherché ou les coordonnées partent vers OpenStreetMap ; rien d'autre (ni jeton ni données).
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org';
-const OVERPASS = 'https://overpass-api.de/api/interpreter';
+/** Serveurs Overpass essayés dans l'ordre : le principal est parfois saturé ou refuse (502, 406, 429). */
+export const OVERPASS_SERVERS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+];
 
 export interface OsmPlace {
   osm: string; // « node/123 »
@@ -194,10 +200,71 @@ export function fromOverpass(els: OverpassEl[]): OsmPlace[] {
 }
 
 /** Lieux autour d'un point (300 m par défaut). */
-export async function nearbyPlaces(lat: number, lon: number, radius = 300, signal?: AbortSignal): Promise<OsmPlace[]> {
-  const res = await get(OVERPASS, { method: 'POST', body: new URLSearchParams({ data: overpassQuery(lat, lon, radius) }), signal });
-  const body = (await res.json()) as { elements?: OverpassEl[] };
-  return fromOverpass(body.elements ?? []);
+export async function nearbyPlaces(
+  lat: number,
+  lon: number,
+  radius = 300,
+  signal?: AbortSignal,
+  servers: string[] = OVERPASS_SERVERS,
+): Promise<OsmPlace[]> {
+  const data = overpassQuery(lat, lon, radius);
+  for (const url of servers) {
+    // Chaque serveur a 20 secondes ; une panne, un refus ou un délai dépassé : on passe au suivant.
+    const ctrl = new AbortController();
+    const stop = () => ctrl.abort();
+    signal?.addEventListener('abort', stop);
+    const timer = setTimeout(stop, 20000);
+    try {
+      const res = await fetch(url, { method: 'POST', body: new URLSearchParams({ data }), signal: ctrl.signal });
+      if (res.ok) {
+        const body = (await res.json()) as { elements?: OverpassEl[] };
+        return fromOverpass(body.elements ?? []);
+      }
+    } catch {
+      if (signal?.aborted) throw new DOMException('Annulé', 'AbortError');
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', stop);
+    }
+  }
+  // Aucun serveur Overpass : on demande à Nominatim les grandes catégories autour du point.
+  return nearbyByNominatim(lat, lon, radius, signal);
+}
+
+const CATEGORIES = ['restaurant', 'bar', 'café', 'boulangerie', 'caviste', 'fromagerie'];
+
+/** Secours : recherche Nominatim par catégorie dans un carré autour du point (une requête par seconde au plus). */
+export async function nearbyByNominatim(lat: number, lon: number, radius: number, signal?: AbortSignal): Promise<OsmPlace[]> {
+  const dLat = (radius * 2) / 111000;
+  const dLon = dLat / Math.max(0.2, Math.cos((lat * Math.PI) / 180));
+  const out = new Map<string, OsmPlace>();
+  let failures = 0;
+  for (const [k, cat] of CATEGORIES.entries()) {
+    if (k) await new Promise((r) => setTimeout(r, 1100));
+    if (signal?.aborted) throw new DOMException('Annulé', 'AbortError');
+    const p = new URLSearchParams({
+      q: cat,
+      format: 'jsonv2',
+      addressdetails: '1',
+      extratags: '1',
+      limit: '15',
+      bounded: '1',
+      viewbox: [lon - dLon, lat + dLat, lon + dLon, lat - dLat].join(','),
+      'accept-language': 'fr',
+    });
+    try {
+      const hits = (await (await get(`${NOMINATIM}/search?${p}`, { signal })).json()) as NominatimHit[];
+      for (const h of hits) {
+        const o = fromNominatim(h);
+        if (o.type !== 'autre') out.set(o.osm, o);
+      }
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') throw e;
+      failures++;
+    }
+  }
+  if (failures === CATEGORIES.length) throw new OsmError('OpenStreetMap ne répond pas pour l’instant : réessaie dans quelques minutes, ou cherche le lieu par son nom.');
+  return [...out.values()];
 }
 
 /** Ta position (le téléphone demande l'autorisation la première fois). */

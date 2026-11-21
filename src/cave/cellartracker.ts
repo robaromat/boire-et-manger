@@ -127,6 +127,75 @@ function ctSize(s: string): string {
   return s;
 }
 
+// Régions et pays de CellarTracker (en anglais) en français ; un nom absent de la liste reste tel quel.
+const REGIONS_FR: Record<string, string> = {
+  burgundy: 'Bourgogne',
+  'loire valley': 'Loire',
+  rhone: 'Rhône',
+  'rhone / savoie': 'Rhône / Savoie',
+  bordeaux: 'Bordeaux',
+  champagne: 'Champagne',
+  'languedoc roussillon': 'Languedoc-Roussillon',
+  languedoc: 'Languedoc',
+  roussillon: 'Roussillon',
+  'southwest france': 'Sud-Ouest',
+  provence: 'Provence',
+  savoie: 'Savoie',
+  jura: 'Jura',
+  alsace: 'Alsace',
+  corsica: 'Corse',
+  beaujolais: 'Beaujolais',
+  piedmont: 'Piémont',
+  veneto: 'Vénétie',
+  tuscany: 'Toscane',
+  lombardia: 'Lombardie',
+  'lombardia / veneto': 'Lombardie / Vénétie',
+  sicily: 'Sicile',
+  sardinia: 'Sardaigne',
+  'valle d’aosta': 'Vallée d’Aoste',
+  "valle d'aosta": 'Vallée d’Aoste',
+  'trentino-alto adige': 'Trentin-Haut-Adige',
+  catalunya: 'Catalogne',
+  rioja: 'Rioja',
+  'castilla y leon': 'Castille-et-León',
+  andalucia: 'Andalousie',
+  douro: 'Douro',
+  mosel: 'Moselle',
+  rheingau: 'Rheingau',
+  california: 'Californie',
+  'western cape': 'Cap-Occidental',
+  'south australia': 'Australie-Méridionale',
+  puglia: 'Pouilles',
+  'pais vasco': 'Pays basque',
+  'castilla-la mancha': 'Castille-La Manche',
+  murcia: 'Murcie',
+  'rapel valley': 'Vallée de Rapel',
+  campania: 'Campanie',
+  galicia: 'Galice',
+  navarra: 'Navarre',
+};
+const COUNTRIES_FR: Record<string, string> = {
+  italy: 'Italie',
+  spain: 'Espagne',
+  germany: 'Allemagne',
+  austria: 'Autriche',
+  switzerland: 'Suisse',
+  greece: 'Grèce',
+  hungary: 'Hongrie',
+  lebanon: 'Liban',
+  usa: 'États-Unis',
+  'south africa': 'Afrique du Sud',
+  australia: 'Australie',
+  'new zealand': 'Nouvelle-Zélande',
+  argentina: 'Argentine',
+  chile: 'Chili',
+  georgia: 'Géorgie',
+};
+const key = (s: string) => s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/’/g, "'");
+/** « Burgundy » → « Bourgogne », « Italy » → « Italie ». */
+export const frRegion = (s: string) => REGIONS_FR[key(s)] ?? REGIONS_FR[s.trim().toLowerCase()] ?? COUNTRIES_FR[key(s)] ?? s;
+export const frCountry = (s: string) => COUNTRIES_FR[key(s)] ?? s;
+
 /** « Sans ajout de soufre », « zéro sulfite »… dans le nom de la cuvée. */
 export function ctLabels(...parts: string[]): WineLabel[] {
   return /sans\s+(ajout\s+de\s+)?(soufre|sulfites?)|z[ée]ro\s+sulfites?|no\s+sulfites?\s+added/i.test(parts.join(' ')) ? ['sans-sulfites'] : [];
@@ -146,9 +215,9 @@ function wineFrom(r: Rec): Omit<Wine, 'stock' | 'history'> {
     cuvee: designation,
     vintage: vintage && vintage > 1800 && vintage !== 1001 ? vintage : null,
     color: ctColor(get(r, 'type'), get(r, 'color'), get(r, 'category')),
-    appellation: get(r, 'appellation') || get(r, 'subregion') || get(r, 'region'),
-    region: get(r, 'region'),
-    country: get(r, 'country'),
+    appellation: get(r, 'appellation') || get(r, 'subregion') || frRegion(get(r, 'region')),
+    region: frRegion(get(r, 'region')),
+    country: frCountry(get(r, 'country')),
     size: ctSize(get(r, 'size')),
     grapes: get(r, 'varietal') || get(r, 'mastervarietal'),
     labels: ctLabels(get(r, 'wine'), get(r, 'designation')),

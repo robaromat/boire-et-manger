@@ -9,8 +9,14 @@ import { placeIcon } from './bits';
 
 type L = typeof Leaflet;
 let lib: Promise<L> | null = null;
+// Un échec n'est pas gardé : le prochain affichage de la carte réessaie.
 const loadLeaflet = () =>
-  (lib ??= Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')]).then(([m]) => ((m as unknown as { default?: L }).default ?? (m as unknown as L))));
+  (lib ??= Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')])
+    .then(([m]) => (m as unknown as { default?: L }).default ?? (m as unknown as L))
+    .catch((e: unknown) => {
+      lib = null;
+      throw e;
+    }));
 
 const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const ATTRIB = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
@@ -134,7 +140,19 @@ export function MapView(props: {
     <div class={`smap ${props.class ?? ''}`}>
       <div ref={el} class="smap-in" />
       {props.pick && <div class="smap-cross" aria-hidden="true" />}
-      {failed && <p class="smap-fail">Carte indisponible hors connexion.</p>}
+      {failed && (
+        <div class="smap-fail" role="alert">
+          <span>
+            {navigator.onLine
+              ? 'La carte n’a pas pu se charger, sans doute parce que l’app vient d’être mise à jour.'
+              : 'Pas de réseau : la carte a besoin d’internet.'}
+          </span>
+          {/* Recharger récupère les fichiers de la dernière version. */}
+          <button class="btn small primary" onClick={() => location.reload()}>
+            Réessayer
+          </button>
+        </div>
+      )}
     </div>
   );
 }

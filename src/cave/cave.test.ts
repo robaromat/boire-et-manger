@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyCtImport, buildCtImport, ctDate, ctReason, dateOrder, scoreToStars } from './cellartracker';
+import { applyCtImport, buildCtImport, ctDate, ctReason, dateOrder, frCountry, frRegion, scoreToStars } from './cellartracker';
 import { csvRecords, decodeText, parseCsv } from './csv';
 import { draftFromLabel, type LabelRead } from './label';
 import { mergeCave } from './merge';
@@ -343,5 +343,14 @@ describe('cave : filtres de la recherche', () => {
     const c = filterChoices(d.wines);
     expect(c.places).toEqual([['Sens', 5], ['Bozel', 1]]);
     expect(c.regions).toEqual([['Bordeaux', 4], ['Bourgogne', 2]]);
+  });
+});
+
+describe('CellarTracker : régions en français', () => {
+  it('traduit les régions et pays connus, garde les autres', () => {
+    expect([frRegion('Burgundy'), frRegion('Loire Valley'), frRegion('Rhône'), frRegion('Southwest France'), frRegion("Valle d'Aosta"), frRegion('Mars')]).toEqual([
+      'Bourgogne', 'Loire', 'Rhône', 'Sud-Ouest', 'Vallée d’Aoste', 'Mars',
+    ]);
+    expect([frCountry('Italy'), frCountry('France')]).toEqual(['Italie', 'France']);
   });
 });
