@@ -333,6 +333,13 @@ function TutoSection() {
         </button>
       </div>
       {done && <p class="testres ok">Chaque visite se rouvrira à ton prochain passage dans le carnet.</p>}
+      <p class="lead">
+        Pour installer l’app chez quelqu’un d’autre, avec ses propres données :{' '}
+        <a class="linkbtn" href="installer.html" target="_blank" rel="noopener">
+          le guide d’installation
+        </a>
+        .
+      </p>
     </section>
   );
 }

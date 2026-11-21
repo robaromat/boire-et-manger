@@ -87,6 +87,12 @@ export function Setup() {
             {busy ? 'Connexion…' : 'Se connecter'}
           </button>
         </form>
+        <p class="center">
+          Première fois ?{' '}
+          <a class="linkbtn" href="installer.html">
+            Le guide d’installation pas à pas
+          </a>
+        </p>
         <ol class="steps">
           <li>Sur github.com : Settings → Developer settings → Fine-grained tokens → Generate new token.</li>
           <li>

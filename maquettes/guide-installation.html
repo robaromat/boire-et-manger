@@ -1,0 +1,118 @@
+<title>Installer Boire & Manger</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Guide d'installation : une colonne de lecture, les étapes numérotées (c'est une vraie suite), palette « carnet de marché » de l'app. */
+:root {
+  --bg: #f2eee3; --card: #fbf9f3; --ink: #1d2620; --muted: #687064; --line: #ddd6c4; --accent: #2c6a49; --soft: #dfeadf; --warn: #b0532b;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif; --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #151815; --card: #1e221e; --ink: #ebe7dc; --muted: #9b9e92; --line: #323830; --accent: #74c595; --soft: #23362a; --warn: #ec9468; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #151815; --card: #1e221e; --ink: #ebe7dc; --muted: #9b9e92; --line: #323830; --accent: #74c595; --soft: #23362a; --warn: #ec9468; color-scheme: dark; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 56px; }
+main { max-width: 680px; margin: 0 auto; display: grid; gap: 22px; }
+h1 { font-family: var(--display); font-size: clamp(34px, 7vw, 48px); line-height: 1.05; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+h1 span { display: block; width: 14px; height: 32px; border-radius: 5px; background: var(--accent); margin-bottom: 14px; }
+.lead { margin: 0; color: var(--muted); font-size: 18px; }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; counter-reset: s; }
+ol.steps > li { counter-increment: s; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px 18px 18px 64px; position: relative; min-width: 0; }
+ol.steps > li::before { content: counter(s); position: absolute; left: 16px; top: 16px; width: 34px; height: 34px; border-radius: 50%; background: var(--soft); color: var(--accent); font-weight: 700; display: grid; place-items: center; }
+h2 { font-family: var(--display); font-size: 21px; margin: 2px 0 8px; text-wrap: balance; }
+h3 { font-size: 15px; margin: 14px 0 4px; display: flex; align-items: center; gap: 8px; }
+h3 i { font-style: normal; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--soft); color: var(--accent); }
+p { margin: 0 0 8px; } li p:last-child { margin-bottom: 0; }
+ul, ol.sub { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 4px; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: .92em; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; overflow-wrap: anywhere; }
+a { color: var(--accent); font-weight: 600; overflow-wrap: anywhere; }
+.warn { border-left: 4px solid var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--card)); padding: 10px 12px; border-radius: 10px; margin-top: 10px; }
+.opt { color: var(--muted); font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.note { background: var(--card); border: 1px dashed var(--line); border-radius: 18px; padding: 16px 18px; }
+.note h2 { margin-top: 0; }
+.go { display: inline-block; margin-top: 4px; padding: 12px 18px; border-radius: 12px; background: var(--accent); color: var(--bg); text-decoration: none; }
+</style>
+
+<main>
+  <h1><span></span>Installer Boire &amp; Manger</h1>
+  <p class="lead">Tes courses, tes recettes, ta cave et tes souvenirs de table, sur ton téléphone. Compte 10 minutes. Tes données restent dans un espace privé à toi : personne d’autre ne les voit.</p>
+
+  <ol class="steps">
+    <li>
+      <h2>Crée un compte GitHub</h2>
+      <p>C’est gratuit, sur <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a>. Si tu en as déjà un, passe à l’étape suivante. Note ton <b>nom d’utilisateur</b> : il servira à l’étape 5.</p>
+    </li>
+    <li>
+      <h2>Crée ton dépôt de données, privé</h2>
+      <p>Va sur <a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a> :</p>
+      <ul>
+        <li>Repository name : <code>boire-et-manger-data</code></li>
+        <li>Coche <b>Private</b></li>
+        <li>Ne coche rien d’autre, puis <b>Create repository</b>.</li>
+      </ul>
+    </li>
+    <li>
+      <h2>Crée un jeton d’accès à ce seul dépôt</h2>
+      <p>Va sur <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> :</p>
+      <ul>
+        <li>Token name : <code>Boire &amp; Manger</code>, et une date d’expiration (par exemple dans un an)</li>
+        <li>Repository access : <b>Only select repositories</b> → <code>boire-et-manger-data</code></li>
+        <li>Permissions → Repository permissions → <b>Contents : Read and write</b></li>
+        <li><b>Generate token</b>, puis copie le jeton (il commence par <code>github_pat_</code>). GitHub ne le montre qu’une fois : garde-le dans tes notes le temps de l’étape 5.</li>
+      </ul>
+    </li>
+    <li>
+      <h2>Installe l’app sur ton téléphone</h2>
+      <p>Ouvre <a href="https://robaromat.github.io/boire-et-manger/" target="_blank" rel="noopener">robaromat.github.io/boire-et-manger</a>, puis :</p>
+      <h3><i>iPhone</i> dans Safari</h3>
+      <ol class="sub">
+        <li>Touche le bouton <b>Partager</b> : le carré avec une flèche vers le haut, en bas de l’écran (en haut sur iPad).</li>
+        <li>Fais défiler et touche <b>Sur l’écran d’accueil</b>.</li>
+        <li>Touche <b>Ajouter</b>.</li>
+      </ol>
+      <h3><i>Android</i> dans Chrome</h3>
+      <ol class="sub">
+        <li>Touche le menu <b>⋮</b> en haut à droite.</li>
+        <li>Touche <b>Installer l’application</b> (selon la version : « Ajouter à l’écran d’accueil »).</li>
+        <li>Confirme avec <b>Installer</b>.</li>
+      </ol>
+      <p style="margin-top:10px">L’icône <b>B&amp;M</b> apparaît sur ton écran d’accueil. L’app s’ouvre en plein écran et marche aussi sans réseau.</p>
+      <p class="warn">Sur iPhone, l’app installée ne reprend pas ce qui a été fait dans Safari : fais bien l’étape suivante <b>depuis l’icône B&amp;M</b>.</p>
+    </li>
+    <li>
+      <h2>Ouvre l’app et connecte-toi</h2>
+      <p>Depuis l’icône B&amp;M :</p>
+      <ul>
+        <li>Jeton GitHub : colle ton jeton</li>
+        <li>Propriétaire : <b>ton</b> nom d’utilisateur GitHub</li>
+        <li>Dépôt : <code>boire-et-manger-data</code></li>
+      </ul>
+      <p class="warn">Le champ « Propriétaire » est pré-rempli avec <code>robaromat</code> : remplace-le par ton nom d’utilisateur, sinon la connexion échoue.</p>
+      <p style="margin-top:10px">Touche <b>Se connecter</b>. L’app te dit que le dépôt est vide : touche <b>Créer le fichier</b>. C’est prêt.</p>
+    </li>
+    <li>
+      <p class="opt">Facultatif</p>
+      <h2>Ajoute une clé OpenAI pour les fonctions ChatGPT</h2>
+      <p>Pour lire une recette ou une étiquette de vin en photo, « Challenger la recette » et « Donne-moi des infos » sur un vin :</p>
+      <ul>
+        <li>Crée une clé sur <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a> et mets quelques euros de crédit (Billing)</li>
+        <li>Dans l’app : Réglages (en haut à droite) → colle la clé.</li>
+      </ul>
+      <p>Compte environ 1 centime par lecture. La clé reste sur ton téléphone.</p>
+    </li>
+  </ol>
+
+  <section class="note">
+    <h2>Bon à savoir</h2>
+    <ul>
+      <li>Tes listes, recettes, vins et photos sont rangés dans <b>ton</b> dépôt privé : personne d’autre n’y a accès.</li>
+      <li>Le jeton et la clé OpenAI restent sur ton téléphone ; ne les envoie à personne.</li>
+      <li>Sur un autre appareil (tablette, ordinateur), refais les étapes 4 et 5 avec le même jeton : tout se synchronise.</li>
+      <li>L’app se met à jour toute seule : un bandeau « Mettre à jour » apparaît quand une nouvelle version sort.</li>
+      <li>Quand ton jeton expire, recrée-en un (étape 3) et colle-le dans les Réglages.</li>
+    </ul>
+    <a class="go" href="https://robaromat.github.io/boire-et-manger/">Ouvrir Boire &amp; Manger</a>
+  </section>
+</main>
