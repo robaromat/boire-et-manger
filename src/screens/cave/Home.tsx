@@ -178,7 +178,7 @@ export function Home(props: {
                           key={s.shelf}
                           class="shelf"
                           onClick={() => setShelf({ place: p.place, shelf: s.shelf, wines: s.items.map((x) => x.wine) })}
-                          aria-label={`${p.place}, ${s.shelf ? `clayette ${s.shelf}` : 'à ranger'} : ${s.n} bouteilles`}
+                          aria-label={`${p.place}, ${s.shelf ? `clayette ${s.shelf}` : 'sans clayette'} : ${s.n} bouteilles`}
                         >
                           <span class="lbl">{s.shelf || '—'}</span>
                           <span class="bots">
@@ -341,7 +341,7 @@ export function Home(props: {
       {shelf && (
         <Sheet onClose={() => setShelf(null)} label={`${shelf.place} · ${shelf.shelf}`}>
           <h2>
-            {shelf.place} · {shelf.shelf || 'à ranger'}
+            {shelf.shelf ? `${shelf.place} · ${shelf.shelf}` : shelf.place}
           </h2>
           <div style="margin:0 -18px">
             {shelf.wines.map((w) => (

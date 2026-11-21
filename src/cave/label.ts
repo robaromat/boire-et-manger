@@ -1,6 +1,6 @@
 import { RecipeError, askJson } from '../recipe/read';
 import { emptyWineDraft, type WineDraft } from './ops';
-import { COLORS, type Estimable, type WineColor } from './types';
+import { COLORS, type Estimable, type WineColor, type WineLabel } from './types';
 
 // Lecture d'une étiquette de vin par ChatGPT (photo), ou fiche complétée d'après le nom du vin (texte).
 // Ce qui est lu sur l'étiquette est repris tel quel ; ce qui est déduit (région, cépages, style, fenêtre de dégustation,
@@ -21,6 +21,9 @@ export interface LabelRead {
   drink_to: number | null;
   pairings: string[];
   recipes: number[];
+  organic: boolean;
+  biodynamic: boolean;
+  no_added_sulfites: boolean;
 }
 
 export type LabelInput = { image: string } | { text: string };
@@ -43,6 +46,12 @@ Renvoie :
 - pairings : 2 à 4 plats qui vont bien avec ce vin, courts (« Volaille rôtie », « Comté affiné »).
 - recipes : les numéros (dans la liste donnée) des recettes du carnet qui s'accorderaient bien avec ce vin, 0 à 3, les meilleures d'abord ;
   liste vide si aucune ne va vraiment.
+- organic : true si l'étiquette porte un logo ou une mention bio (feuille européenne, AB, « vin biologique », « agriculture
+  biologique »), ou si le domaine est notoirement certifié bio ; sinon false.
+- biodynamic : true si l'étiquette porte Demeter, Biodyvin ou la mention biodynamie, ou si le domaine est notoirement
+  certifié en biodynamie ; sinon false.
+- no_added_sulfites : true seulement si l'étiquette dit « sans sulfites ajoutés » (ou « sans soufre ajouté », « zéro
+  sulfite ajouté ») ou si cette cuvée est notoirement sans sulfites ajoutés ; sinon false.
 N'invente pas un domaine ou une cuvée illisibles : laisse vide.`;
 
 const SCHEMA = {
@@ -51,7 +60,7 @@ const SCHEMA = {
   schema: {
     type: 'object',
     additionalProperties: false,
-    required: ['is_wine', 'domaine', 'cuvee', 'vintage', 'color', 'appellation', 'region', 'country', 'grapes', 'style', 'drink_from', 'drink_to', 'pairings', 'recipes'],
+    required: ['is_wine', 'domaine', 'cuvee', 'vintage', 'color', 'appellation', 'region', 'country', 'grapes', 'style', 'drink_from', 'drink_to', 'pairings', 'recipes', 'organic', 'biodynamic', 'no_added_sulfites'],
     properties: {
       is_wine: { type: 'boolean' },
       domaine: { type: 'string' },
@@ -67,6 +76,9 @@ const SCHEMA = {
       drink_to: { type: ['integer', 'null'] },
       pairings: { type: 'array', items: { type: 'string' } },
       recipes: { type: 'array', items: { type: 'integer' } },
+      organic: { type: 'boolean' },
+      biodynamic: { type: 'boolean' },
+      no_added_sulfites: { type: 'boolean' },
     },
   },
 } as const;
@@ -154,6 +166,15 @@ export function draftFromLabel(r: LabelRead, recipes: RecipeRef[], base?: WineDr
     d.pairings = (r.pairings ?? []).map(clean).filter(Boolean).slice(0, 4);
     d.pairRecipes = [...new Set((r.recipes ?? []).map((i) => recipes[i]?.id).filter((x): x is string => !!x))].slice(0, 3);
     if (d.pairings.length || d.pairRecipes.length) est.add('pairings');
+  }
+  // Classification : seulement si la fiche n'en a pas encore ; à vérifier sur l'écran de revue.
+  if (!d.labels?.length) {
+    const labels: WineLabel[] = [];
+    if (r.organic || r.biodynamic) labels.push('bio');
+    if (r.biodynamic) labels.push('biodynamie');
+    if (r.no_added_sulfites) labels.push('sans-sulfites');
+    d.labels = labels;
+    if (labels.length) est.add('labels');
   }
   d.estimated = [...est];
   return d;

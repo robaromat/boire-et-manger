@@ -30,5 +30,8 @@ function mergeWine(l: Wine, r: Wine, b: Wine | undefined): Wine {
 export function mergeCave(base: CaveFile | null, local: CaveFile, remote: CaveFile): CaveFile {
   const wines = mergeEntities(byId(base?.wines), byId(local.wines), byId(remote.wines), mergeWine);
   const wishes = mergeEntities<Wish>(byId(base?.wishes), byId(local.wishes), byId(remote.wishes), (x) => x);
-  return { schemaVersion: 1, wines: [...wines.values()], wishes: [...wishes.values()] };
+  // Caves réglées : celles du côté qui les a changées.
+  const localChanged = JSON.stringify(local.places ?? null) !== JSON.stringify(base?.places ?? null);
+  const places = localChanged ? local.places : remote.places;
+  return { schemaVersion: 1, wines: [...wines.values()], wishes: [...wishes.values()], ...(places ? { places } : {}) };
 }

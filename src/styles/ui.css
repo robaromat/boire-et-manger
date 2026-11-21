@@ -83,3 +83,8 @@
 .ord-row i { width: 10px; height: 10px; border-radius: 3px; background: var(--rc); flex: none; }
 .ord-row span { flex: 1; font-weight: 500; }
 
+
+/* Réglages : caves et clayettes */
+.placeset { display: grid; gap: 10px; }
+.placerow { display: grid; grid-template-columns: 1fr 1fr 42px; gap: 8px; align-items: end; }
+.placenote { grid-column: 1 / -1; margin: -4px 0 0; }

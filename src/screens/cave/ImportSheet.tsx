@@ -4,6 +4,7 @@ import { Sheet } from '../../components/Sheet';
 import { showSnack } from '../../components/Snack';
 import { applyCtImport, buildCtImport, type CtFileKind, type CtImport } from '../../cave/cellartracker';
 import { decodeText } from '../../cave/csv';
+import { placeDefs } from '../../cave/ops';
 import { caveEngine, mutateCave } from '../../sync/store';
 
 // Import CellarTracker (maquette validée) : 1. exporter les CSV, 2. les choisir, 3. vérifier (chiffres, lieux à renommer),
@@ -42,7 +43,10 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
         return;
       }
       setPlan(p);
-      setNames(Object.fromEntries(p.locations.map((l) => [l.name, l.name || 'À ranger'])));
+      // Un emplacement CellarTracker qui porte le nom d'une de tes caves y va ; les autres vont « En attente », à changer ici.
+      const defs = placeDefs(data).map((x) => x.name);
+      const pick = (n: string) => defs.find((d) => d.toLowerCase() === n.trim().toLowerCase()) ?? (defs.includes('En attente') ? 'En attente' : (defs[0] ?? n));
+      setNames(Object.fromEntries(p.locations.map((l) => [l.name, pick(l.name)])));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -146,14 +150,14 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
         <section>
           <h3>Emplacements</h3>
           <p class="note" style="margin-bottom:8px">
-            CellarTracker a « Location » et « Bin » : ils deviennent lieu et clayette. Renomme les lieux si besoin.
+            CellarTracker a « Location » et « Bin » : ils deviennent cave et clayette. Choisis dans quelle cave va chaque emplacement.
           </p>
           <div style="overflow-x:auto">
             <table class="maptbl">
               <thead>
                 <tr>
                   <th>CellarTracker</th>
-                  <th>Lieu</th>
+                  <th>Cave</th>
                   <th>Clayettes</th>
                 </tr>
               </thead>
@@ -162,14 +166,20 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
                   <tr key={l.name}>
                     <td>{l.name || '(vide)'}</td>
                     <td>
-                      <input
-                        aria-label={`Lieu pour ${l.name || 'emplacement vide'}`}
+                      <select
+                        aria-label={`Cave pour ${l.name || 'emplacement vide'}`}
                         value={names[l.name] ?? ''}
-                        onInput={(e) => {
+                        onChange={(e) => {
                           const v = e.currentTarget.value;
                           setNames((cur) => ({ ...cur, [l.name]: v }));
                         }}
-                      />
+                      >
+                        {[...new Set([...placeDefs(caveEngine.value?.data.value ?? { schemaVersion: 1, wines: [], wishes: [] }).map((x) => x.name), ...(l.name ? [l.name] : [])])].map((n) => (
+                          <option key={n} value={n}>
+                            {n === l.name ? `${n} (garder le nom)` : n}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td>
                       {l.bins.length ? `${l.bins.length} (${l.bins.slice(0, 3).join(', ')}${l.bins.length > 3 ? '…' : ''})` : '—'} · {l.bottles} bout.

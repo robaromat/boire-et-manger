@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'preact/hooks';
 import { Icon } from '../../components/Icon';
 import { Sheet } from '../../components/Sheet';
-import { knownPlaces, knownShelves, type WineDraft } from '../../cave/ops';
-import { COLORS, COLOR_LABELS, type CaveFile, type Estimable, type WineColor } from '../../cave/types';
+import { placeOptions, shelfOptions, type WineDraft } from '../../cave/ops';
+import { COLORS, COLOR_LABELS, WINE_LABELS, WINE_LABEL_NAMES, type CaveFile, type Estimable, type WineColor, type WineLabel } from '../../cave/types';
 import { Dot, recipeList } from './bits';
 
 // Fiche à vérifier (après lecture d'une étiquette), à remplir (saisie à la main) ou à modifier.
@@ -37,7 +37,7 @@ export function WineEditor(props: {
   onSave: (r: WineEditorResult) => void;
 }) {
   const i = props.initial;
-  const places = useMemo(() => knownPlaces(props.data), [props.data]);
+  const places = useMemo(() => placeOptions(props.data), [props.data]);
   const recipes = useMemo(recipeList, []);
   const [f, setF] = useState({
     domaine: i.domaine,
@@ -56,19 +56,20 @@ export function WineEditor(props: {
     bought: i.bought,
     notes: i.notes,
     why: props.why ?? '',
-    place: places[0] ?? 'Cave',
+    place: places[0] ?? 'En attente',
     shelf: '',
     recipeInput: '',
   });
   const [color, setColor] = useState<WineColor | null>(props.mode === 'manual' && !i.domaine ? null : i.color);
   const [pairRecipes, setPairRecipes] = useState(i.pairRecipes);
+  const [labels, setLabels] = useState<WineLabel[]>(i.labels ?? []);
   const [kind, setKind] = useState<WineKind>(props.kind ?? 'cave');
   const [qty, setQty] = useState(1);
   const set = (k: keyof typeof f) => (e: { currentTarget: { value: string } }) => {
     const v = e.currentTarget.value;
     setF((cur) => ({ ...cur, [k]: v }));
   };
-  const shelves = useMemo(() => knownShelves(props.data, f.place), [props.data, f.place]);
+  const shelves = useMemo(() => shelfOptions(props.data, f.place), [props.data, f.place]);
   const isNew = props.mode !== 'edit';
   const estimated = new Set(i.estimated);
   const est = (k: Estimable) => estimated.has(k) && <span class="wtag est">estimation</span>;
@@ -107,6 +108,7 @@ export function WineEditor(props: {
       price: num(f.price),
       bought: f.bought.trim(),
       notes: f.notes.trim(),
+      labels,
     };
     // Un champ corrigé à la main n'est plus une estimation.
     const changed: Record<Estimable, boolean> = {
@@ -115,9 +117,10 @@ export function WineEditor(props: {
       style: draft.style !== i.style,
       region: draft.region !== i.region,
       pairings: pairings.join('|') !== i.pairings.join('|') || pairRecipes.join('|') !== i.pairRecipes.join('|'),
+      labels: [...labels].sort().join('|') !== [...(i.labels ?? [])].sort().join('|'),
     };
     draft.estimated = i.estimated.filter((k) => !changed[k]);
-    props.onSave({ draft, kind, slot: { place: f.place.trim() || 'Cave', shelf: f.shelf.trim(), n: qty }, why: f.why.trim() });
+    props.onSave({ draft, kind, slot: { place: f.place.trim() || 'En attente', shelf: f.shelf.trim(), n: qty }, why: f.why.trim() });
   };
 
   const heading = props.title ?? (props.mode === 'edit' ? 'Modifier le vin' : props.mode === 'read' ? 'Vérifier le vin' : 'Nouveau vin');
@@ -241,6 +244,17 @@ export function WineEditor(props: {
           </datalist>
         </div>
       </div>
+      <div class="field">
+        <label>Classification {est('labels')}</label>
+        <div class="choice" role="group" aria-label="Classification">
+          {WINE_LABELS.map((l) => (
+            <button key={l} aria-pressed={labels.includes(l)} onClick={() => setLabels(labels.includes(l) ? labels.filter((x) => x !== l) : [...labels, l])}>
+              {labels.includes(l) && <Icon name="check" />}
+              {WINE_LABEL_NAMES[l]}
+            </button>
+          ))}
+        </div>
+      </div>
       {i.estimated.length > 0 ? (
         <div class="estbox">
           <div class="h">
@@ -287,22 +301,27 @@ export function WineEditor(props: {
           </div>
           <div class="fgrid2">
             <div class="field">
-              <label for="v-lieu">Lieu</label>
-              <input id="v-lieu" class="input" list="v-places" value={f.place} onInput={set('place')} />
-              <datalist id="v-places">
+              <label for="v-lieu">Cave</label>
+              <select id="v-lieu" class="input" value={f.place} onChange={(e) => {
+                const v = e.currentTarget.value;
+                setF((cur) => ({ ...cur, place: v, shelf: '' }));
+              }}>
                 {places.map((p) => (
-                  <option key={p} value={p} />
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </div>
             <div class="field">
               <label for="v-clay">Clayette</label>
-              <input id="v-clay" class="input" list="v-shelves" value={f.shelf} placeholder="ex. B3" onInput={set('shelf')} />
-              <datalist id="v-shelves">
-                {shelves.map((s) => (
-                  <option key={s} value={s} />
+              <select id="v-clay" class="input" value={f.shelf} onChange={set('shelf')}>
+                {shelves.map((x) => (
+                  <option key={x} value={x}>
+                    {x || 'Aucune'}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </div>
           </div>
         </>

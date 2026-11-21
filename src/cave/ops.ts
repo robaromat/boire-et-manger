@@ -1,5 +1,5 @@
 import { newId } from '../lib/ids';
-import { isTasting, type CaveFile, type Exit, type Slot, type Wine, type Wish } from './types';
+import { DEFAULT_PLACES, WINE_LABEL_NAMES, isTasting, type CaveFile, type Exit, type PlaceDef, type Slot, type Wine, type Wish } from './types';
 
 // Opérations sur la cave, sans effet de bord (testées dans cave.test.ts).
 
@@ -24,6 +24,7 @@ export const emptyWineDraft = (): WineDraft => ({
   price: null,
   bought: '',
   notes: '',
+  labels: [],
 });
 
 const now = () => new Date().toISOString();
@@ -42,7 +43,7 @@ export function wineName(w: Pick<Wine, 'domaine' | 'cuvee' | 'appellation'>): st
 }
 export const vintageLabel = (w: Pick<Wine, 'vintage'>) => (w.vintage ? String(w.vintage) : 'NM');
 
-export const slotLabel = (s: Pick<Slot, 'place' | 'shelf'>) => (s.shelf.trim() ? `${s.place} · ${s.shelf}` : `${s.place} · à ranger`);
+export const slotLabel = (s: Pick<Slot, 'place' | 'shelf'>) => (s.shelf.trim() ? `${s.place} · ${s.shelf}` : s.place);
 const slotKey = (s: Pick<Slot, 'place' | 'shelf'>) => `${s.place.trim().toLowerCase()}|${s.shelf.trim().toLowerCase()}`;
 export const sameSlot = (a: Pick<Slot, 'place' | 'shelf'>, b: Pick<Slot, 'place' | 'shelf'>) => slotKey(a) === slotKey(b);
 
@@ -135,6 +136,48 @@ export function cellarPlan(wines: Wine[]): PlanPlace[] {
     .sort((a, b) => b.n - a.n || a.place.localeCompare(b.place, 'fr'));
 }
 
+/** Caves réglées dans les Réglages (ou celles par défaut). */
+export const placeDefs = (d: CaveFile): PlaceDef[] => (d.places?.length ? d.places : DEFAULT_PLACES);
+
+/** Choix de la liste « Cave » : celles réglées, puis celles encore utilisées par des bouteilles (imports…), et `current`. */
+export function placeOptions(d: CaveFile, current?: string): string[] {
+  const out = placeDefs(d).map((p) => p.name);
+  const add = (x: string) => x.trim() && !out.some((o) => o.toLowerCase() === x.trim().toLowerCase()) && out.push(x.trim());
+  for (const w of d.wines) for (const s of w.stock) add(s.place);
+  if (current) add(current);
+  return out;
+}
+
+/** Choix de la liste « Clayette » d'une cave : « aucune » (vide), celles réglées, puis celles déjà utilisées. */
+export function shelfOptions(d: CaveFile, place: string, current?: string): string[] {
+  const def = placeDefs(d).find((p) => p.name.toLowerCase() === place.trim().toLowerCase());
+  const out = ['', ...(def?.shelves ?? [])];
+  const add = (x: string) => x.trim() && !out.some((o) => o.toLowerCase() === x.trim().toLowerCase()) && out.push(x.trim());
+  for (const s of knownShelves(d, place)) add(s);
+  if (current) add(current);
+  return out;
+}
+
+export const setPlaces = (d: CaveFile, places: PlaceDef[]): CaveFile => ({ ...d, places });
+
+/** Renomme une cave partout : réglages et bouteilles qui y sont rangées. */
+export function renamePlace(d: CaveFile, from: string, to: string): CaveFile {
+  const k = from.trim().toLowerCase();
+  const t = now();
+  return {
+    ...d,
+    wines: d.wines.map((w) =>
+      w.stock.some((s) => s.place.trim().toLowerCase() === k)
+        ? { ...w, stock: w.stock.map((s) => (s.place.trim().toLowerCase() === k ? { ...s, place: to.trim() } : s)), updatedAt: t }
+        : w,
+    ),
+  };
+}
+
+/** Nombre de bouteilles rangées dans une cave. */
+export const bottlesIn = (d: CaveFile, place: string) =>
+  d.wines.reduce((a, w) => a + w.stock.filter((s) => s.place.trim().toLowerCase() === place.trim().toLowerCase()).reduce((b, s) => b + s.n, 0), 0);
+
 /** Lieux déjà utilisés (pour les listes de choix), du plus rempli au moins rempli. */
 export function knownPlaces(d: CaveFile): string[] {
   const n = new Map<string, { label: string; n: number }>();
@@ -170,10 +213,10 @@ export const norm = (s: string) =>
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 
-export function matchWine(w: Pick<Wine, 'domaine' | 'cuvee' | 'appellation' | 'region' | 'grapes' | 'vintage'>, q: string): boolean {
+export function matchWine(w: Pick<Wine, 'domaine' | 'cuvee' | 'appellation' | 'region' | 'grapes' | 'vintage'> & { labels?: Wine['labels'] }, q: string): boolean {
   const words = norm(q).split(' ').filter(Boolean);
   if (!words.length) return true;
-  const hay = norm([w.domaine, w.cuvee, w.appellation, w.region, w.grapes, w.vintage ?? ''].join(' '));
+  const hay = norm([w.domaine, w.cuvee, w.appellation, w.region, w.grapes, w.vintage ?? '', ...(w.labels ?? []).map((l) => WINE_LABEL_NAMES[l])].join(' '));
   return words.every((x) => hay.includes(x));
 }
 

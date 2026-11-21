@@ -59,8 +59,24 @@ export interface Exit {
 }
 
 /** Champs remplis par ChatGPT, affichés « estimation » tant que tu ne les as pas corrigés. */
-export const ESTIMABLE = ['window', 'grapes', 'style', 'pairings', 'region'] as const;
+export const ESTIMABLE = ['window', 'grapes', 'style', 'pairings', 'region', 'labels'] as const;
 export type Estimable = (typeof ESTIMABLE)[number];
+
+/** Classification du vin : lue sur l'étiquette (logos, mentions) ou cochée à la main. */
+export const WINE_LABELS = ['bio', 'biodynamie', 'sans-sulfites'] as const;
+export type WineLabel = (typeof WINE_LABELS)[number];
+export const WINE_LABEL_NAMES: Record<WineLabel, string> = { bio: 'Bio', biodynamie: 'Biodynamie', 'sans-sulfites': 'Sans sulfites ajoutés' };
+
+/** Une cave (lieu) et ses clayettes, réglées dans les Réglages. « Aucune » clayette (vide) est toujours possible. */
+export interface PlaceDef {
+  name: string;
+  shelves: string[];
+}
+export const DEFAULT_PLACES: PlaceDef[] = [
+  { name: 'Sens', shelves: ['0', '1', '2', '3', '4', '5'] },
+  { name: 'Bozel', shelves: [] },
+  { name: 'En attente', shelves: [] },
+];
 
 /** Conseils de service donnés par ChatGPT (« Donne-moi des infos »), gardés dans la fiche. */
 export interface WineService {
@@ -101,6 +117,7 @@ export interface Wine {
   history: Exit[]; // le plus récent en premier
   ctId?: string; // iWine CellarTracker
   service?: WineService;
+  labels: WineLabel[];
   createdAt: string;
   updatedAt: string;
 }
@@ -120,6 +137,8 @@ export interface CaveFile {
   schemaVersion: 1;
   wines: Wine[];
   wishes: Wish[];
+  /** Caves et clayettes proposées dans les listes ; absent = DEFAULT_PLACES. */
+  places?: PlaceDef[];
 }
 
 export const CAVE_FILE = 'cave.json';
@@ -171,6 +190,7 @@ export function parseCaveFile(raw: unknown): CaveFile | null {
       price: num(w.price),
       bought: str(w.bought),
       notes: str(w.notes),
+      labels: strs(w.labels).filter((l): l is WineLabel => (WINE_LABELS as readonly string[]).includes(l)),
       stock: Array.isArray(w.stock)
         ? w.stock.filter(isObj).map((s) => ({ place: str(s.place), shelf: str(s.shelf), n: Math.max(0, Math.round(num(s.n) ?? 0)) }))
         : [],
@@ -192,5 +212,8 @@ export function parseCaveFile(raw: unknown): CaveFile | null {
           createdAt: str(e.createdAt) || new Date(0).toISOString(),
         }))
     : [];
-  return { schemaVersion: 1, wines, wishes };
+  const places = Array.isArray(raw.places)
+    ? raw.places.filter(isObj).map((p) => ({ name: str(p.name).trim(), shelves: strs(p.shelves).map((x) => x.trim()).filter(Boolean) })).filter((p) => p.name)
+    : undefined;
+  return { schemaVersion: 1, wines, wishes, ...(places ? { places } : {}) };
 }

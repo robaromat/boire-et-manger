@@ -4,10 +4,10 @@ import { csvRecords, decodeText, parseCsv } from './csv';
 import { draftFromLabel, type LabelRead } from './label';
 import { mergeCave } from './merge';
 import {
-  addStock, addWine, bottles, cellarPlan, drinkGroups, emptyWineDraft, findSame, matchWine, removeExit, takeBottle, tastings, wineName,
+  addStock, addWine, bottles, cellarPlan, placeOptions, setPlaces, shelfOptions, renamePlace, bottlesIn, drinkGroups, emptyWineDraft, findSame, matchWine, removeExit, takeBottle, tastings, wineName,
   type WineDraft,
 } from './ops';
-import { emptyCaveFile, parseCaveFile, type CaveFile } from './types';
+import { DEFAULT_PLACES, emptyCaveFile, parseCaveFile, type CaveFile } from './types';
 
 const draft = (p: Partial<WineDraft>): WineDraft => ({ ...emptyWineDraft(), ...p });
 const exit = { date: '2026-11-20', reason: 'bue' as const, rating: 4, comment: '', dish: '', where: '', detail: '', auteur: 'Robin' };
@@ -138,6 +138,9 @@ describe('cave : lecture d’étiquette', () => {
     drink_to: 2025,
     pairings: ['Agneau'],
     recipes: [1, 7],
+    organic: true,
+    biodynamic: false,
+    no_added_sulfites: true,
   };
   const recipes = [
     { id: 'r_a', title: 'Curry', category: 'Plat' },
@@ -149,7 +152,8 @@ describe('cave : lecture d’étiquette', () => {
     expect(d.domaine).toBe('Domaine Jean-Louis Chave');
     expect([d.from, d.to]).toEqual([2025, 2030]);
     expect(d.pairRecipes).toEqual(['r_b']);
-    expect(d.estimated.sort()).toEqual(['grapes', 'pairings', 'region', 'style', 'window']);
+    expect(d.labels).toEqual(['bio', 'sans-sulfites']);
+    expect(d.estimated.sort()).toEqual(['grapes', 'labels', 'pairings', 'region', 'style', 'window']);
   });
 
   it('« Compléter » ne remplace pas ce qui est déjà saisi', () => {
@@ -160,6 +164,8 @@ describe('cave : lecture d’étiquette', () => {
     expect([d.from, d.to]).toEqual([2026, 2032]);
     expect(d.estimated).not.toContain('window');
     expect(d.estimated).not.toContain('grapes');
+    const checked = draftFromLabel(read, recipes, draft({ labels: ['biodynamie'] }));
+    expect(checked.labels).toEqual(['biodynamie']);
   });
 });
 
@@ -255,5 +261,42 @@ describe('CellarTracker', () => {
     const again = applyCtImport(d, buildCtImport(files, d), { Cellar: 'Cave', Kitchen: 'Armoire cuisine' });
     expect(again.wines).toHaveLength(d.wines.length);
     expect(again.wines.find((w) => w.id === chinon.id)!.history).toHaveLength(2);
+  });
+});
+
+describe('cave : caves et clayettes réglées', () => {
+  it('par défaut Sens (aucune, 0 à 5), Bozel et En attente', () => {
+    const d = emptyCaveFile();
+    expect(placeOptions(d)).toEqual(['Sens', 'Bozel', 'En attente']);
+    expect(shelfOptions(d, 'Sens')).toEqual(['', '0', '1', '2', '3', '4', '5']);
+    expect(shelfOptions(d, 'Bozel')).toEqual(['']);
+  });
+
+  it('garde dans les listes les emplacements encore utilisés (import)', () => {
+    let d = setPlaces(emptyCaveFile(), [{ name: 'Sens', shelves: ['1'] }]);
+    d = addWine(d, draft({ domaine: 'X' }), [{ place: 'Cellar', shelf: 'B2', n: 1 }, { place: 'Sens', shelf: '9', n: 1 }]).data;
+    expect(placeOptions(d)).toEqual(['Sens', 'Cellar']);
+    expect(shelfOptions(d, 'Sens')).toEqual(['', '1', '9']);
+    expect(shelfOptions(d, 'Cellar')).toEqual(['', 'B2']);
+  });
+
+  it('relecture et fusion des caves réglées', () => {
+    expect(parseCaveFile({ schemaVersion: 1, wines: [], places: [{ name: ' Sens ', shelves: ['0', ' '] }, { name: '' }] })?.places).toEqual([{ name: 'Sens', shelves: ['0'] }]);
+    expect(parseCaveFile({ schemaVersion: 1, wines: [] })?.places).toBeUndefined();
+    const base = emptyCaveFile();
+    const local = setPlaces(base, [...DEFAULT_PLACES, { name: 'Lyon', shelves: [] }]);
+    expect(mergeCave(base, local, base).places?.map((p) => p.name)).toEqual(['Sens', 'Bozel', 'En attente', 'Lyon']);
+    expect(mergeCave(base, base, local).places?.map((p) => p.name)).toContain('Lyon');
+  });
+
+  it('renommer une cave déplace ses bouteilles avec elle', () => {
+    let d = addWine(emptyCaveFile(), draft({ domaine: 'X' }), [{ place: 'Sens', shelf: '2', n: 3 }]).data;
+    d = renamePlace(d, 'sens', 'Sens (maison)');
+    expect(d.wines[0]!.stock).toEqual([{ place: 'Sens (maison)', shelf: '2', n: 3 }]);
+    expect(bottlesIn(d, 'Sens (maison)')).toBe(3);
+  });
+
+  it('cherche aussi par classification', () => {
+    expect(matchWine({ ...draft({ domaine: 'Gramenon', labels: ['bio'] }) }, 'bio')).toBe(true);
   });
 });

@@ -9,10 +9,10 @@ import { settings } from '../../settings/settings';
 import { draftFromLabel, readLabel } from '../../cave/label';
 import { wineAdvice } from '../../cave/advice';
 import {
-  addWish, avgRating, bottles, deleteWine, knownPlaces, knownShelves, removeExit, setStock, slotLabel, takeBottle, todayIso, updateExit, updateWine,
+  addWish, avgRating, bottles, deleteWine, placeOptions, shelfOptions, removeExit, setStock, slotLabel, takeBottle, todayIso, updateExit, updateWine,
   vintageLabel, windowState, wineName, type WineDraft,
 } from '../../cave/ops';
-import { COLOR_LABELS, REASON_LABELS, isTasting, type Exit, type Reason, type Slot, type Wine } from '../../cave/types';
+import { COLOR_LABELS, REASON_LABELS, WINE_LABEL_NAMES, isTasting, type Exit, type Reason, type Slot, type Wine } from '../../cave/types';
 import { caveEngine, mutateCave } from '../../sync/store';
 import { Cover, Stars, fmtNote, shortDate } from '../recettes/bits';
 import { Viewer } from '../recettes/Page';
@@ -90,6 +90,7 @@ export function WinePage({ w, onBack, start }: { w: Wine; onBack: () => void; st
           to: d.to,
           pairings: d.pairings,
           pairRecipes: d.pairRecipes,
+          labels: d.labels,
           estimated: d.estimated,
         }),
       );
@@ -140,6 +141,11 @@ export function WinePage({ w, onBack, start }: { w: Wine; onBack: () => void; st
             {w.appellation && <span class="rtag plain">{w.appellation}</span>}
             {w.region && <span class="rtag plain">{w.region}</span>}
             {w.size && <span class="rtag plain">{w.size}</span>}
+            {(w.labels ?? []).map((l) => (
+              <span key={l} class="rtag wlab">
+                {WINE_LABEL_NAMES[l]}
+              </span>
+            ))}
             {avg != null && (
               <span class="statline">
                 <Stars n={avg} />
@@ -730,8 +736,8 @@ function DetailSheet({ w, exitId, reason, onClose }: { w: Wine; exitId: string; 
 
 function StockSheet({ w, onClose }: { w: Wine; onClose: () => void }) {
   const data = caveEngine.value?.data.value;
-  const places = useMemo(() => (data ? knownPlaces(data) : []), [data]);
-  const [rows, setRows] = useState<Slot[]>(() => (w.stock.length ? w.stock.map((s) => ({ ...s })) : [{ place: places[0] ?? 'Cave', shelf: '', n: 1 }]));
+  const places = useMemo(() => (data ? placeOptions(data) : []), [data]);
+  const [rows, setRows] = useState<Slot[]>(() => (w.stock.length ? w.stock.map((s) => ({ ...s })) : [{ place: places[0] ?? 'En attente', shelf: '', n: 1 }]));
   const setRow = (k: number, patch: Partial<Slot>) => setRows((cur) => cur.map((r, j) => (j === k ? { ...r, ...patch } : r)));
   const total = rows.reduce((a, r) => a + r.n, 0);
   return (
@@ -743,30 +749,25 @@ function StockSheet({ w, onClose }: { w: Wine; onClose: () => void }) {
         </button>
       </div>
       <p class="note" style="margin-top:-6px">
-        Change le lieu, la clayette ou le nombre de bouteilles. Pour une bouteille bue, préfère « Sortir » : elle ira dans l’historique.
+        Change la cave, la clayette ou le nombre de bouteilles. Pour une bouteille bue, préfère « Sortir » : elle ira dans l’historique.
       </p>
-      <datalist id="s-places">
-        {places.map((p) => (
-          <option key={p} value={p} />
-        ))}
-      </datalist>
       <div class="slots">
         {rows.map((r, k) => (
           <div class="slotrow" key={k}>
-            <input class="input" list="s-places" aria-label={`Lieu ${k + 1}`} value={r.place} onInput={(e) => setRow(k, { place: e.currentTarget.value })} />
-            <input
-              class="input"
-              list={`s-shelves-${k}`}
-              aria-label={`Clayette ${k + 1}`}
-              placeholder="Clayette"
-              value={r.shelf}
-              onInput={(e) => setRow(k, { shelf: e.currentTarget.value })}
-            />
-            <datalist id={`s-shelves-${k}`}>
-              {(data ? knownShelves(data, r.place) : []).map((s) => (
-                <option key={s} value={s} />
+            <select class="input" aria-label={`Cave ${k + 1}`} value={r.place} onChange={(e) => setRow(k, { place: e.currentTarget.value, shelf: '' })}>
+              {(data ? placeOptions(data, r.place) : [r.place]).map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
               ))}
-            </datalist>
+            </select>
+            <select class="input" aria-label={`Clayette ${k + 1}`} value={r.shelf} onChange={(e) => setRow(k, { shelf: e.currentTarget.value })}>
+              {(data ? shelfOptions(data, r.place, r.shelf) : [r.shelf]).map((x) => (
+                <option key={x} value={x}>
+                  {x || 'Aucune'}
+                </option>
+              ))}
+            </select>
             <span class="stepper">
               <button aria-label={`Une bouteille de moins, emplacement ${k + 1}`} onClick={() => setRow(k, { n: Math.max(0, r.n - 1) })}>
                 −
@@ -779,7 +780,7 @@ function StockSheet({ w, onClose }: { w: Wine; onClose: () => void }) {
           </div>
         ))}
       </div>
-      <button class="btn ghost small" style="justify-self:start" onClick={() => setRows([...rows, { place: rows[rows.length - 1]?.place ?? places[0] ?? 'Cave', shelf: '', n: 1 }])}>
+      <button class="btn ghost small" style="justify-self:start" onClick={() => setRows([...rows, { place: rows[rows.length - 1]?.place ?? places[0] ?? 'En attente', shelf: '', n: 1 }])}>
         <Icon name="plus" />
         Autre emplacement
       </button>

@@ -7,7 +7,8 @@ import { installPrompt, isStandalone } from '../pwa';
 import { stepsOf } from '../tuto/tuto';
 import { clearSettings, maskSecret, repoRef, settings, updateSettings } from '../settings/settings';
 import { testConnection, serialize } from '../sync/github';
-import { engine, mutate, resetLocal, startSync } from '../sync/store';
+import { caveEngine, engine, mutate, mutateCave, resetLocal, startSync } from '../sync/store';
+import { bottlesIn, placeDefs, renamePlace, setPlaces } from '../cave/ops';
 import { testOpenAIKey } from '../providers/openai';
 import { RAYONS } from '../model/types';
 import { moveRayon } from '../model/ops';
@@ -204,6 +205,92 @@ function RayonsSection() {
   );
 }
 
+type PlaceRow = { orig: string; name: string; shelves: string };
+
+/** Caves et clayettes proposées dans les listes déroulantes de la Cave (rangées dans cave.json : les mêmes partout). */
+function CaveSection() {
+  const d = caveEngine.value?.data.value;
+  const [rows, setRows] = useState<PlaceRow[] | null>(null);
+  const [msg, setMsg] = useState<Msg>(null);
+  if (!d) return null;
+  const list = rows ?? placeDefs(d).map((p) => ({ orig: p.name, name: p.name, shelves: p.shelves.join(', ') }));
+  const edit = (k: number, patch: Partial<PlaceRow>) => {
+    setMsg(null);
+    setRows(list.map((r, j) => (j === k ? { ...r, ...patch } : r)));
+  };
+  const names = list.map((r) => r.name.trim().toLowerCase()).filter(Boolean);
+  const dup = names.length !== new Set(names).size;
+  const save = () => {
+    const clean = list.filter((r) => r.name.trim());
+    mutateCave((x) => {
+      let next = x;
+      for (const r of clean) if (r.orig && r.orig !== r.name.trim()) next = renamePlace(next, r.orig, r.name);
+      return setPlaces(next, clean.map((r) => ({ name: r.name.trim(), shelves: [...new Set(r.shelves.split(',').map((y) => y.trim()).filter(Boolean))] })));
+    });
+    setRows(null);
+    setMsg({ ok: true, text: 'Caves enregistrées.' });
+  };
+  return (
+    <section class="card">
+      <h2>
+        <Icon name="bottle" />
+        Caves et clayettes
+      </h2>
+      <p class="lead">Ce que proposent les listes « Cave » et « Clayette » quand tu ranges une bouteille. « Aucune » clayette est toujours possible.</p>
+      <div class="placeset">
+        {list.map((r, k) => {
+          const n = r.orig ? bottlesIn(d, r.orig) : 0;
+          return (
+            <div class="placerow" key={k}>
+              <div class="field">
+                <label for={`pl-${k}`}>Cave</label>
+                <input id={`pl-${k}`} class="input" value={r.name} placeholder="ex. Lyon" onInput={(e) => edit(k, { name: e.currentTarget.value })} />
+              </div>
+              <div class="field">
+                <label for={`sh-${k}`}>Clayettes</label>
+                <input id={`sh-${k}`} class="input" value={r.shelves} placeholder="aucune, ou 0, 1, 2…" onInput={(e) => edit(k, { shelves: e.currentTarget.value })} />
+              </div>
+              <button
+                class="iconbtn"
+                aria-label={`Retirer ${r.name || 'cette cave'}`}
+                onClick={() => {
+                  setMsg(null);
+                  setRows(list.filter((_, j) => j !== k));
+                }}
+              >
+                <Icon name="trash" />
+              </button>
+              {n > 0 && (
+                <p class="hint placenote">
+                  {n} bouteille{n > 1 ? 's' : ''} rangée{n > 1 ? 's' : ''} ici{r.orig !== r.name.trim() && r.name.trim() ? ' : elles suivront le nouveau nom' : ''}.
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div class="btnrow">
+        <button
+          class="btn ghost"
+          onClick={() => {
+            setMsg(null);
+            setRows([...list, { orig: '', name: '', shelves: '' }]);
+          }}
+        >
+          <Icon name="plus" />
+          Ajouter une cave
+        </button>
+        <button class="btn primary" disabled={rows === null || dup} onClick={save}>
+          Enregistrer
+        </button>
+      </div>
+      {dup && <p class="testres err">Deux caves portent le même nom.</p>}
+      {msg && <p class={`testres ${msg.ok ? 'ok' : 'err'}`}>{msg.text}</p>}
+      <p class="hint">Clayettes séparées par des virgules. Retirer une cave d’ici ne touche pas aux bouteilles qui y sont rangées.</p>
+    </section>
+  );
+}
+
 function DeviceSection() {
   const [confirm, setConfirm] = useState(false);
   const e = engine.value;
@@ -358,6 +445,7 @@ export function SettingsScreen() {
         <GitHubSection />
         <OpenAISection />
         <RayonsSection />
+        <CaveSection />
         <AppSection />
         <TutoSection />
         <DeviceSection />

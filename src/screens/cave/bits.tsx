@@ -45,6 +45,8 @@ export function WineRow({ w, current, onOpen, sub }: { w: Wine; current?: boolea
           {vintageLabel(w)}
           {w.appellation ? ` · ${w.appellation}` : ''}
           {w.size ? ` · ${w.size}` : ''}
+          {w.labels?.includes('biodynamie') ? ' · biodynamie' : w.labels?.includes('bio') ? ' · bio' : ''}
+          {w.labels?.includes('sans-sulfites') ? ' · sans sulfites' : ''}
         </span>
         <span class="meta">{sub ?? (whereText(w) || 'plus en cave')}</span>
       </span>

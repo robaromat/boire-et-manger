@@ -102,5 +102,12 @@ chaque carnet.
 - « Donne-moi des infos » sur la fiche d'un vin : carafe, température de service, verre, où en est le vin, un mot
   sur le domaine ; gardé dans la fiche (`service`), marqué « estimation ChatGPT », « Redemander » pour actualiser.
 
+### Ajouts du 21/11/2026 (v1.4.1, v1.5.0)
+- Guide d'installation public : robaromat.github.io/boire-et-manger/installer.html (iPhone et Android), lié depuis
+  l'écran de connexion et les Réglages.
+- Cave : classification bio / biodynamie / sans sulfites ajoutés (lue sur l'étiquette, cochable) ; caves et clayettes
+  réglées dans les Réglages (rangées dans cave.json : Sens 0–5, Bozel, En attente par défaut), listes déroulantes à la
+  saisie, dans « Emplacements » et à l'import CellarTracker ; renommer une cave y déplace ses bouteilles.
+
 ### Plus tard (hors v1)
 Planning des repas, recherche globale, minuteurs, deuxième utilisateur, import Mapstr.
