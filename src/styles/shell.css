@@ -1,7 +1,9 @@
 /* Coque : carnet ouvert + barre des 4 onglets. L'accent de toute l'app suit le carnet ouvert. */
 
 .shell {
-  height: 100dvh; display: flex; flex-direction: column;
+  /* 100 % de la fenêtre (html, body, #app) et non 100dvh : sur Android, dvh restait parfois périmé (après le clavier)
+     et la barre d'onglets sortait par le bas de l'écran. */
+  height: 100%; overflow: hidden; display: flex; flex-direction: column;
   padding-top: env(safe-area-inset-top, 0px);
 }
 .shell[data-tab='courses'] { --accent: var(--a-courses); }

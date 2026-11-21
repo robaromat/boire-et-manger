@@ -21,5 +21,5 @@ export function App() {
   if (!configured) return <div class="app"><Setup /></div>;
 
   const r = route.value;
-  return <div class="app">{r.name === 'settings' ? <SettingsScreen /> : <Shell tab={r.tab} sub={r.sub} />}</div>;
+  return <div class={r.name === 'settings' ? 'app' : 'app app-shell'}>{r.name === 'settings' ? <SettingsScreen /> : <Shell tab={r.tab} sub={r.sub} />}</div>;
 }
