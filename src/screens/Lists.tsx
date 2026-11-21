@@ -86,10 +86,10 @@ export function Lists() {
   const newListSheet = d && sheet?.kind === 'newList' && (
     <ListSheet
       onClose={() => setSheet(null)}
-      onSubmit={(name) => {
+      onSubmit={(name, rayons) => {
         let id = '';
         mutate((cur) => {
-          const r = createList(cur, name);
+          const r = createList(cur, name, { rayons });
           id = r.id;
           return r.data;
         });
@@ -201,7 +201,9 @@ export function Lists() {
               {done.length ? 'Touche « Courses terminées » une fois passé en caisse.' : 'Ajoute un article en bas, ou touche un habituel.'}
             </div>
           )}
-          {d.rayonOrder.map((r) => {
+          {list.rayons === false && todo.length > 0 && <section aria-label="À prendre">{rows(todo)}</section>}
+          {list.rayons !== false &&
+            d.rayonOrder.map((r) => {
             const g = todo.filter((i) => i.rayon === r);
             if (!g.length) return null;
             return (
@@ -271,7 +273,7 @@ export function Lists() {
             mutate((cur) => updateItem(cur, sheet.id, edit));
             setSheet(null);
             setFlashIds([sheet.id]);
-            if (before && before.rayon !== edit.rayon)
+            if (before && before.rayon !== edit.rayon && list.rayons !== false)
               showSnack(`Retenu : ${edit.name.trim() || before.name} → ${RAYONS[edit.rayon]}`);
           }}
           onMove={(edit, destId) => {
@@ -295,8 +297,8 @@ export function Lists() {
         <ListSheet
           list={list}
           onClose={() => setSheet(null)}
-          onSubmit={(name) => {
-            mutate((cur) => renameList(cur, list.id, name));
+          onSubmit={(name, rayons) => {
+            mutate((cur) => renameList(cur, list.id, name, rayons));
             setSheet(null);
           }}
           onDelete={() => {

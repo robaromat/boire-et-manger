@@ -2,19 +2,23 @@ import { useState } from 'preact/hooks';
 import { Sheet } from '../components/Sheet';
 import type { ShopList } from '../model/types';
 
-/** Créer une liste (list absent) ou renommer / supprimer la liste ouverte. */
+/** Créer une liste (list absent) ou renommer / supprimer la liste ouverte ; avec ou sans rayons (demandé à la création). */
 export function ListSheet(props: {
   list?: ShopList;
   onClose: () => void;
-  onSubmit: (name: string) => void;
+  onSubmit: (name: string, rayons: boolean) => void;
   onDelete?: () => void;
 }) {
   const { list } = props;
   const [name, setName] = useState(list?.name ?? '');
+  // À la création, rien n'est choisi d'avance : on demande.
+  const [rayons, setRayons] = useState<boolean | null>(list ? list.rayons !== false : null);
   const [confirming, setConfirming] = useState(false);
+  const ready = !!name.trim() && rayons != null;
+  const changed = !list || name.trim() !== list.name || rayons !== (list.rayons !== false);
   const submit = (e: Event) => {
     e.preventDefault();
-    if (name.trim()) props.onSubmit(name);
+    if (ready && changed) props.onSubmit(name, rayons);
   };
   const n = list?.items.length ?? 0;
 
@@ -33,8 +37,18 @@ export function ListSheet(props: {
           onInput={(e) => setName(e.currentTarget.value)}
         />
       </form>
-      <button class="btn primary block" disabled={!name.trim()} onClick={submit}>
-        {list ? 'Renommer' : 'Créer la liste'}
+      <div class="kind-opts" role="radiogroup" aria-label="Rangement des articles">
+        <button type="button" role="radio" aria-checked={rayons === true} onClick={() => setRayons(true)}>
+          <b>Avec rayons</b>
+          <small>Courses alimentaires : les articles sont rangés par rayon (fruits et légumes, crèmerie…)</small>
+        </button>
+        <button type="button" role="radio" aria-checked={rayons === false} onClick={() => setRayons(false)}>
+          <b>Liste simple</b>
+          <small>Bricolage, matériel, pharmacie… : les articles restent dans l’ordre où tu les ajoutes</small>
+        </button>
+      </div>
+      <button class="btn primary block" disabled={!ready || !changed} onClick={submit}>
+        {list ? 'Enregistrer' : 'Créer la liste'}
       </button>
       {list && props.onDelete && !confirming && (
         <button class="btn danger block" onClick={() => setConfirming(true)}>

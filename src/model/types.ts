@@ -39,6 +39,8 @@ export interface ShopList {
   name: string;
   items: Item[];
   createdAt: string;
+  /** false = liste simple, sans rayons (bricolage, matériel…) ; absent = classée par rayons alimentaires. */
+  rayons?: boolean;
 }
 
 export interface HistoryEntry {

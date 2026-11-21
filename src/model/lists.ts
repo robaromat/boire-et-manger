@@ -76,7 +76,8 @@ export function addEntries(d: DataFile, listId: string, entries: Entry[], ctx: C
       continue;
     }
     const known = history[key];
-    const rayon = classify(e.name, history);
+    // Liste sans rayons : rien n'est deviné (« moule à tarte » n'est pas un coquillage) ; ce qui est inconnu va en Divers.
+    const rayon = list.rayons === false ? (known?.rayon ?? 'div') : classify(e.name, history);
     const item: Item = withSource(
       {
         id: idOf(ctx, 'i'),
@@ -215,13 +216,20 @@ export function finishShopping(d: DataFile, listId: string, ctx: Ctx = {}): { da
 
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export function createList(d: DataFile, name: string, ctx: Ctx = {}): { data: DataFile; id: string } {
+/** Nouvelle liste ; `rayons: false` = liste simple, articles à plat dans l'ordre d'ajout. */
+export function createList(d: DataFile, name: string, ctx: Ctx & { rayons?: boolean } = {}): { data: DataFile; id: string } {
   const id = idOf(ctx, 'l');
-  return { data: { ...d, lists: [...d.lists, { id, name: capitalize(name.trim()), items: [], createdAt: nowOf(ctx) }] }, id };
+  const list = { id, name: capitalize(name.trim()), items: [], createdAt: nowOf(ctx), ...(ctx.rayons === false ? { rayons: false } : {}) };
+  return { data: { ...d, lists: [...d.lists, list] }, id };
 }
 
-export const renameList = (d: DataFile, id: string, name: string): DataFile =>
-  mapList(d, id, (l) => ({ ...l, name: capitalize(name.trim()) || l.name }));
+/** Renomme une liste et, si `rayons` est donné, la passe avec ou sans rayons. */
+export const renameList = (d: DataFile, id: string, name: string, rayons?: boolean): DataFile =>
+  mapList(d, id, (l) => {
+    const { rayons: _old, ...rest } = l;
+    const keep = rayons ?? l.rayons;
+    return { ...rest, name: capitalize(name.trim()) || l.name, ...(keep === false ? { rayons: false } : {}) };
+  });
 
 export const deleteList = (d: DataFile, id: string): DataFile => ({ ...d, lists: d.lists.filter((l) => l.id !== id) });
 

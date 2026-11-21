@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DICT_SIZE, classify, classifyByDict } from './dict';
 import {
-  addEntries, createList, deleteList, finishShopping, habituels, moveItem, suggestions, toggleItem, updateItem,
+  addEntries, createList, deleteList, renameList, finishShopping, habituels, moveItem, suggestions, toggleItem, updateItem,
 } from './lists';
 import { parseEntries, parseQtyText } from './qty';
 import { data, hist, item, list } from '../sync/fixtures';
@@ -21,6 +21,7 @@ describe('dictionnaire', () => {
     ["Jus d'orange", 'boi'], ['Tofu fumé', 'trait'], ['Petits pois', 'surg'], ['Glace vanille', 'surg'],
     ['Liquide vaisselle', 'hyg'], ['Huile essentielle de lavande', 'hyg'], ["Huile d'olive", 'vrac'],
     ['Pâtes complètes', 'vrac'], ['Comté 18 mois', 'cre'], ['Tomates pelées', 'vrac'], ['Tomates', 'fl'],
+    ['Moules', 'trait'], ['Moule à tarte', 'hyg'], ['Moules à muffins', 'hyg'], ['Papier cuisson', 'hyg'],
   ])('%s → %s', (name, r) => {
     expect(classifyByDict(name)).toBe(r);
   });
@@ -104,6 +105,19 @@ describe('habituels et suggestions', () => {
   it('créer une liste', () => {
     const { data: d2, id } = createList(d, '  leroy merlin ', ctx);
     expect(d2.lists.find((l) => l.id === id)?.name).toBe('Leroy merlin');
+    expect(d2.lists.find((l) => l.id === id)).not.toHaveProperty('rayons');
+  });
+
+  it('liste simple : rien n’est deviné, l’appris est gardé ; on peut la repasser avec rayons', () => {
+    const c = createList(d, 'Matériel', { ...ctx, rayons: false });
+    expect(c.data.lists.find((l) => l.id === c.id)?.rayons).toBe(false);
+    const r = addEntries(c.data, c.id, parseEntries('moule à tarte, épinards, lait'), ctx);
+    const items = r.data.lists.find((l) => l.id === c.id)!.items;
+    expect(items.map((i) => i.rayon)).toEqual(['div', 'div', d.history.lait ? d.history.lait.rayon : 'div']);
+    expect(r.data.history['moule a tarte']?.rayon).toBe('div');
+    const back = renameList(r.data, c.id, 'Matériel', true);
+    expect(back.lists.find((l) => l.id === c.id)).not.toHaveProperty('rayons');
+    expect(renameList(c.data, c.id, 'Bricolage').lists.find((l) => l.id === c.id)?.rayons).toBe(false);
   });
 });
 

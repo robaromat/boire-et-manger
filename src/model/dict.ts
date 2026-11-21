@@ -94,6 +94,9 @@ const RAW: Record<Exclude<RayonId, 'div'>, string> = {
     soupe surgelee, legume pour soupe, herbe surgelee, persil surgele, pave de saumon surgele
   `,
   hyg: `
+    moule a tarte, moule a gateau, moule a cake, moule a manque, moule a muffin, moule a cannele, moule a charlotte,
+    moule a souffle, moule a madeleine, moule a kouglof, moule a savarin, moule a tartelette, moule en silicone, moule silicone,
+    papier cuisson, film alimentaire, papier aluminium, papier alu, sac congelation, sachet congelation,
     savon, savon de marseille, savon noir, gel douche, shampoing, apres shampoing, dentifrice, brosse a dent,
     fil dentaire, bain de bouche, deodorant, creme hydratante, creme solaire, coton, coton tige, demaquillant,
     rasoir, mousse a raser, serviette hygienique, tampon, cup, protege slip, mouchoir, papier toilette, essuie tout,

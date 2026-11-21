@@ -43,6 +43,7 @@ export function ItemSheet(props: {
         />
         <span class="hint">Facultatif. « + » pour cumuler deux quantités.</span>
       </div>
+      {found.list.rayons !== false && (
       <div>
         <h3>Rayon</h3>
         <div class="rchips">
@@ -54,6 +55,7 @@ export function ItemSheet(props: {
           ))}
         </div>
       </div>
+      )}
       <label class="switch">
         <span>
           Toujours à la maison

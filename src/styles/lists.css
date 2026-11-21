@@ -161,3 +161,10 @@
 .ing .q { flex: none; font-weight: 700; font-variant-numeric: tabular-nums; }
 .ing.off .t b, .ing.off .q { color: var(--muted); }
 .select { height: 48px; width: 100%; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); padding: 0 12px; font-size: 16px; }
+
+/* Nouvelle liste : avec ou sans rayons */
+.kind-opts { display: grid; gap: 8px; margin: 4px 0 14px; }
+.kind-opts button { text-align: left; border: 1.5px solid var(--line); background: var(--bg); border-radius: 14px; padding: 11px 14px; }
+.kind-opts button b { display: block; font-size: 16px; }
+.kind-opts button small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; line-height: 1.35; }
+.kind-opts button[aria-checked='true'] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
