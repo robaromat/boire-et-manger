@@ -4,7 +4,7 @@ import { csvRecords, decodeText, parseCsv } from './csv';
 import { draftFromLabel, type LabelRead } from './label';
 import { mergeCave } from './merge';
 import {
-  addStock, addWine, bottles, cellarPlan, placeOptions, setPlaces, shelfOptions, renamePlace, bottlesIn, drinkGroups, emptyWineDraft, findSame, matchWine, removeExit, takeBottle, tastings, wineName,
+  addStock, addWine, bottles, cellarPlan, placeOptions, setPlaces, shelfOptions, renamePlace, bottlesIn, passFilter, filterChoices, onlyPlace, NO_FILTER, drinkGroups, emptyWineDraft, findSame, matchWine, removeExit, takeBottle, tastings, wineName,
   type WineDraft,
 } from './ops';
 import { DEFAULT_PLACES, emptyCaveFile, parseCaveFile, type CaveFile } from './types';
@@ -323,5 +323,25 @@ describe('CellarTracker : exports réels (My Cellar, Wish List)', () => {
     expect(d.wines.find((w) => w.ctId === '769061')!.stock).toEqual([{ place: 'En attente', shelf: '', n: 2 }]);
     expect(d.wishes).toHaveLength(1);
     expect(buildCtImport([{ name: 'w.csv', text: wish }], d).wishes).toHaveLength(0);
+  });
+});
+
+describe('cave : filtres de la recherche', () => {
+  it('couleur, région, appellation, cave', () => {
+    let d = emptyCaveFile();
+    d = addWine(d, draft({ domaine: 'A', color: 'rouge', region: 'Bordeaux', appellation: 'Margaux' }), [{ place: 'Sens', shelf: '1', n: 3 }, { place: 'Bozel', shelf: '', n: 1 }]).data;
+    d = addWine(d, draft({ domaine: 'B', color: 'blanc', region: 'Bourgogne', appellation: 'Chablis' }), [{ place: 'Sens', shelf: '2', n: 2 }]).data;
+    const [b, a] = d.wines;
+    expect(passFilter(a!, { ...NO_FILTER, color: 'rouge' })).toBe(true);
+    expect(passFilter(b!, { ...NO_FILTER, color: 'rouge' })).toBe(false);
+    expect(passFilter(a!, { ...NO_FILTER, region: 'bordeaux', appellation: 'MARGAUX' })).toBe(true);
+    expect(passFilter(b!, { ...NO_FILTER, place: 'Bozel' })).toBe(false);
+    expect(passFilter(a!, { ...NO_FILTER, place: 'Bozel' })).toBe(true);
+    expect(passFilter(a!, { ...NO_FILTER, place: 'Bozel' }, { place: 'Sens' })).toBe(false);
+    expect(passFilter(a!, { ...NO_FILTER, place: 'Bozel' }, null)).toBe(false);
+    expect(onlyPlace(d.wines, 'Bozel').map((w) => [w.domaine, w.stock])).toEqual([['A', [{ place: 'Bozel', shelf: '', n: 1 }]]]);
+    const c = filterChoices(d.wines);
+    expect(c.places).toEqual([['Sens', 5], ['Bozel', 1]]);
+    expect(c.regions).toEqual([['Bordeaux', 4], ['Bourgogne', 2]]);
   });
 });

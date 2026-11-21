@@ -1,5 +1,5 @@
 import { newId } from '../lib/ids';
-import { DEFAULT_PLACES, WINE_LABEL_NAMES, isTasting, type CaveFile, type Exit, type PlaceDef, type Slot, type Wine, type Wish } from './types';
+import { DEFAULT_PLACES, WINE_LABEL_NAMES, isTasting, type CaveFile, type Exit, type PlaceDef, type Slot, type Wine, type WineColor, type Wish } from './types';
 
 // Opérations sur la cave, sans effet de bord (testées dans cave.test.ts).
 
@@ -298,3 +298,62 @@ export const todayIso = () => {
   const t = new Date();
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
 };
+
+// ---------- Filtres de la recherche ----------
+
+export interface WineFilter {
+  color: WineColor | null;
+  place: string;
+  region: string;
+  appellation: string;
+}
+export const NO_FILTER: WineFilter = { color: null, place: '', region: '', appellation: '' };
+export const filterActive = (f: WineFilter) => !!(f.color || f.place || f.region || f.appellation);
+
+const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/** Le vin passe-t-il les filtres ? La cave regarde où sont ses bouteilles (ou, pour une dégustation, d'où elle sortait). */
+export function passFilter(w: Wine, f: WineFilter, from?: { place: string } | null): boolean {
+  if (f.color && w.color !== f.color) return false;
+  if (f.region && !same(w.region, f.region)) return false;
+  if (f.appellation && !same(w.appellation, f.appellation)) return false;
+  if (f.place) return from !== undefined ? !!from && same(from.place, f.place) : w.stock.some((s) => s.n > 0 && same(s.place, f.place));
+  return true;
+}
+
+/** Ne garde que les bouteilles de la cave filtrée (plan et comptes). */
+export const onlyPlace = (wines: Wine[], place: string): Wine[] =>
+  place ? wines.map((w) => ({ ...w, stock: w.stock.filter((s) => same(s.place, place)) })).filter((w) => w.stock.some((s) => s.n > 0)) : wines;
+
+/** Choix proposés par les filtres, avec le nombre de bouteilles, du plus fourni au moins fourni. */
+export function filterChoices(wines: Wine[]): { regions: [string, number][]; appellations: [string, number][]; places: [string, number][] } {
+  const count = (key: (w: Wine) => string[]) => {
+    const m = new Map<string, { label: string; n: number }>();
+    for (const w of wines)
+      for (const k of key(w)) {
+        if (!k.trim()) continue;
+        const id = k.trim().toLowerCase();
+        const cur = m.get(id) ?? { label: k.trim(), n: 0 };
+        cur.n += bottles(w) || 1;
+        m.set(id, cur);
+      }
+    return [...m.values()].sort((a, b) => b.n - a.n || a.label.localeCompare(b.label, 'fr')).map((x) => [x.label, x.n] as [string, number]);
+  };
+  return {
+    regions: count((w) => [w.region]),
+    appellations: count((w) => [w.appellation]),
+    places: (() => {
+      // Pour une cave : les bouteilles rangées là, pas tout le stock du vin.
+      const m = new Map<string, { label: string; n: number }>();
+      for (const w of wines)
+        for (const s of w.stock) {
+          if (!s.n || !s.place.trim()) continue;
+          const id = s.place.trim().toLowerCase();
+          const cur = m.get(id) ?? { label: s.place.trim(), n: 0 };
+          cur.n += s.n;
+          m.set(id, cur);
+        }
+      return [...m.values()].sort((a, b) => b.n - a.n || a.label.localeCompare(b.label, 'fr')).map((x) => [x.label, x.n] as [string, number]);
+    })(),
+  };
+}

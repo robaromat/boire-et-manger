@@ -4,7 +4,10 @@ import { Icon } from '../../components/Icon';
 import { Sheet, sheetsSettled } from '../../components/Sheet';
 import { showSnack } from '../../components/Snack';
 import { Topbar } from '../../components/Topbar';
-import { bottles, cellarPlan, drinkGroups, inCellar, matchWine, removeWish, tastings, totalBottles, wineName, vintageLabel } from '../../cave/ops';
+import {
+  NO_FILTER, bottles, cellarPlan, drinkGroups, filterActive, filterChoices, inCellar, matchWine, onlyPlace, passFilter, removeWish, tastings, totalBottles, wineName, vintageLabel,
+  type WineFilter,
+} from '../../cave/ops';
 import { COLORS, COLOR_LABELS, type CaveFile, type Wine, type Wish } from '../../cave/types';
 import { caveEngine, mutateCave } from '../../sync/store';
 import { Stars, shortDate } from '../recettes/bits';
@@ -23,6 +26,7 @@ const VIEWS: [CaveView, string][] = [
 // Gardés pendant la session : ouvrir une fiche puis revenir retrouve la même vue.
 export const view = signal<CaveView>('boire');
 const query = signal('');
+const filter = signal<WineFilter>(NO_FILTER);
 const caveMode = signal<'plan' | 'liste'>('plan');
 
 /** Le bandeau d'import reste visible tant que rien n'a été importé de CellarTracker. */
@@ -39,6 +43,7 @@ export function Home(props: {
   const { data, openId, onOpen } = props;
   const e = caveEngine.value;
   const q = query.value.trim();
+  const [filterOpen, setFilterOpen] = useState(false);
   const [shelf, setShelf] = useState<{ place: string; shelf: string; wines: Wine[] } | null>(null);
   const row = (w: Wine, sub?: string) => <WineRow key={w.id} w={w} sub={sub} current={w.id === openId} onOpen={() => onOpen(w.id)} />;
   const y = YEAR();
@@ -54,7 +59,8 @@ export function Home(props: {
       <p class="empty">Chargement de la cave…</p>
     );
   } else {
-    const list = inCellar(data).filter((w) => matchWine(w, q));
+    const f = filter.value;
+    const list = inCellar(data).filter((w) => matchWine(w, q) && passFilter(w, f));
     const imported = data.wines.some((w) => w.ctId);
     const banner = !imported && (
       <button class="banner" onClick={props.onImport}>
@@ -138,7 +144,7 @@ export function Home(props: {
         </>
       );
     } else if (view.value === 'cave') {
-      const plan = cellarPlan(list);
+      const plan = cellarPlan(onlyPlace(list, f.place));
       body = (
         <>
           {banner}
@@ -222,7 +228,7 @@ export function Home(props: {
         </>
       );
     } else if (view.value === 'bus') {
-      const all = tastings(data).filter((x) => matchWine(x.wine, q));
+      const all = tastings(data).filter((x) => matchWine(x.wine, q) && passFilter(x.wine, f, f.place ? (x.exit.from ?? null) : undefined));
       body = (
         <>
           <div class="sec-h">
@@ -329,7 +335,12 @@ export function Home(props: {
               </button>
             )}
           </label>
+          <button class="filterbtn" aria-label={filterActive(filter.value) ? 'Filtres (actifs)' : 'Filtres'} onClick={() => setFilterOpen(true)}>
+            <Icon name="filter" />
+            {filterActive(filter.value) && <span class="dot" />}
+          </button>
         </div>
+        {filterActive(filter.value) && <ActiveFilters />}
         {body}
       </div>
       {data && (
@@ -338,6 +349,7 @@ export function Home(props: {
           Vin
         </button>
       )}
+      {filterOpen && data && <FilterSheet data={data} onClose={() => setFilterOpen(false)} />}
       {shelf && (
         <Sheet onClose={() => setShelf(null)} label={`${shelf.place} · ${shelf.shelf}`}>
           <h2>
@@ -358,5 +370,102 @@ export function Home(props: {
         </Sheet>
       )}
     </div>
+  );
+}
+
+/** Les filtres en cours, sous la recherche : un appui retire le filtre. */
+function ActiveFilters() {
+  const f = filter.value;
+  const chips: [string, Partial<WineFilter>][] = [];
+  if (f.color) chips.push([COLOR_LABELS[f.color], { color: null }]);
+  if (f.place) chips.push([f.place, { place: '' }]);
+  if (f.region) chips.push([f.region, { region: '' }]);
+  if (f.appellation) chips.push([f.appellation, { appellation: '' }]);
+  return (
+    <div class="pills" role="group" aria-label="Filtres actifs">
+      {chips.map(([label, reset]) => (
+        <button key={label} class="pill-b fchip" aria-label={`Retirer le filtre ${label}`} onClick={() => (filter.value = { ...filter.value, ...reset })}>
+          {label}
+          <Icon name="close" />
+        </button>
+      ))}
+      {chips.length > 1 && (
+        <button class="pill-b" onClick={() => (filter.value = NO_FILTER)}>
+          Tout effacer
+        </button>
+      )}
+    </div>
+  );
+}
+
+function FilterSheet({ data, onClose }: { data: CaveFile; onClose: () => void }) {
+  const f = filter.value;
+  const set = (patch: Partial<WineFilter>) => (filter.value = { ...filter.value, ...patch });
+  // Les choix tiennent compte des autres filtres : une région ne propose que ses appellations.
+  const base = view.value === 'bus' ? data.wines : inCellar(data);
+  const pool = (except: keyof WineFilter) => base.filter((w) => passFilter(w, { ...f, place: '', [except]: except === 'color' ? null : '' }));
+  const regions = filterChoices(pool('region')).regions;
+  const apps = filterChoices(pool('appellation')).appellations;
+  const places = filterChoices(inCellar(data).filter((w) => passFilter(w, { ...f, place: '' }))).places;
+  const n = inCellar(data).filter((w) => passFilter(w, f)).reduce((a, w) => a + bottles(w), 0);
+  return (
+    <Sheet onClose={onClose} label="Filtres">
+      <div class="sheet-head">
+        <h2>Filtres</h2>
+        <button class="btn ghost small" onClick={() => (filter.value = NO_FILTER)} disabled={!filterActive(f)}>
+          Tout effacer
+        </button>
+      </div>
+      <div class="field">
+        <label>Couleur</label>
+        <div class="choice" role="group" aria-label="Couleur">
+          {COLORS.map((c) => (
+            <button key={c} aria-pressed={f.color === c} onClick={() => set({ color: f.color === c ? null : c })}>
+              <Dot color={c} size={10} />
+              {COLOR_LABELS[c]}
+            </button>
+          ))}
+        </div>
+      </div>
+      {places.length > 0 && (
+        <div class="field">
+          <label>Cave</label>
+          <div class="choice" role="group" aria-label="Cave">
+            {places.map(([p, k]) => (
+              <button key={p} aria-pressed={f.place.toLowerCase() === p.toLowerCase()} onClick={() => set({ place: f.place.toLowerCase() === p.toLowerCase() ? '' : p })}>
+                {p} <span class="meta">{k}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div class="fgrid2">
+        <div class="field">
+          <label for="f-reg">Région</label>
+          <select id="f-reg" class="input" value={f.region} onChange={(e) => set({ region: e.currentTarget.value })}>
+            <option value="">Toutes</option>
+            {regions.map(([r, k]) => (
+              <option key={r} value={r}>
+                {r} ({k})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-app">Appellation</label>
+          <select id="f-app" class="input" value={f.appellation} onChange={(e) => set({ appellation: e.currentTarget.value })}>
+            <option value="">Toutes</option>
+            {apps.map(([a, k]) => (
+              <option key={a} value={a}>
+                {a} ({k})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <button class="btn primary block" onClick={onClose}>
+        {view.value === 'bus' ? 'Voir les dégustations' : `Voir ${n} bouteille${n > 1 ? 's' : ''}`}
+      </button>
+    </Sheet>
   );
 }
