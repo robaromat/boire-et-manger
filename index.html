@@ -3,6 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <script>
+      // Android : sans « viewport-fit=cover », Chrome garde la page au-dessus de la barre de navigation
+      // (en mode bord à bord, la barre d'onglets passait dessous). L'iPhone le garde pour l'encoche.
+      if (/Android/i.test(navigator.userAgent)) document.querySelector('meta[name=viewport]').content = 'width=device-width, initial-scale=1, interactive-widget=resizes-content';
+    </script>
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#F2EEE3" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#151815" media="(prefers-color-scheme: dark)" />
