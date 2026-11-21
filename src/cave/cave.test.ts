@@ -4,7 +4,7 @@ import { csvRecords, decodeText, parseCsv } from './csv';
 import { draftFromLabel, type LabelRead } from './label';
 import { mergeCave } from './merge';
 import {
-  addStock, addWine, bottles, cellarPlan, placeOptions, setPlaces, shelfOptions, renamePlace, bottlesIn, passFilter, filterChoices, onlyPlace, NO_FILTER, drinkGroups, emptyWineDraft, findSame, matchWine, removeExit, takeBottle, tastings, wineName,
+  addStock, addWine, bottles, cellarPlan, setStock, placeOptions, setPlaces, shelfOptions, renamePlace, bottlesIn, passFilter, filterChoices, onlyPlace, NO_FILTER, drinkGroups, emptyWineDraft, findSame, matchWine, removeExit, takeBottle, tastings, wineName,
   type WineDraft,
 } from './ops';
 import { DEFAULT_PLACES, emptyCaveFile, parseCaveFile, type CaveFile } from './types';
@@ -379,5 +379,80 @@ describe('cave : rapports', () => {
       { year: 2025, drunk: 0, other: 0 },
       { year: 2026, drunk: 0, other: 1 },
     ]);
+  });
+});
+
+describe('cave : achats et évolution', () => {
+  it('note une entrée quand on ajoute des bouteilles, pas quand on en retire', () => {
+    let d = emptyCaveFile();
+    const a = addWine(d, draft({ domaine: 'A', price: 12 }), [{ place: 'Sens', shelf: '1', n: 3 }]);
+    d = a.data;
+    expect(d.wines[0]!.purchases).toMatchObject([{ n: 3, price: 12 }]);
+    d = addStock(d, a.id, [{ place: 'Sens', shelf: '2', n: 2 }]);
+    expect(d.wines[0]!.purchases!.map((p) => p.n).sort()).toEqual([2, 3]);
+    d = setStock(d, a.id, [{ place: 'Sens', shelf: '1', n: 1 }]);
+    expect(d.wines[0]!.purchases).toHaveLength(2);
+    d = setStock(d, a.id, [{ place: 'Sens', shelf: '1', n: 4 }]);
+    expect(d.wines[0]!.purchases!.map((p) => p.n).sort()).toEqual([2, 3, 3]);
+    // Un vin noté sans stock (bu ailleurs) n'a pas d'entrée.
+    expect(addWine(d, draft({ domaine: 'B' })).data.wines[0]!.purchases).toBeUndefined();
+  });
+
+  it('relit les achats importés (ctId comme identifiant) et les fusionne d’un appareil à l’autre', () => {
+    const raw = {
+      schemaVersion: 1,
+      wines: [{ id: 'w1', stock: [], history: [], purchases: [{ date: '2024-07-04', n: 11, price: 39, note: 'Vinissimus', ctId: 'p:1' }, { date: 'x', n: 1 }], updatedAt: '2026-01-01' }],
+      wishes: [],
+    };
+    const d = parseCaveFile(raw)!;
+    expect(d.wines[0]!.purchases).toEqual([{ id: 'p:1', date: '2024-07-04', n: 11, price: 39, note: 'Vinissimus', ctId: 'p:1' }]);
+    const p2 = { id: 'p_2', date: '2026-11-21', n: 2, price: null, note: '' };
+    const p3 = { id: 'p_3', date: '2026-11-22', n: 1, price: null, note: '' };
+    const l: CaveFile = { ...d, wines: [{ ...d.wines[0]!, purchases: [p2, ...d.wines[0]!.purchases!], updatedAt: '2026-11-21' }] };
+    const r: CaveFile = { ...d, wines: [{ ...d.wines[0]!, purchases: [p3, ...d.wines[0]!.purchases!], updatedAt: '2026-11-22' }] };
+    expect(mergeCave(d, l, r).wines[0]!.purchases!.map((p) => p.id)).toEqual(['p_3', 'p_2', 'p:1']);
+  });
+
+  it('importe l’export « Purchases » de CellarTracker sans le prendre pour du stock', () => {
+    const csv = [
+      'iWine,iPurchase,PurchaseDate,DeliveryDate,StoreName,Currency,Price,Quantity,Remaining,OrderNumber,Vintage,Wine,Producer,Type',
+      '42,900,04/07/2026,04/07/2026,Unknown,EUR,39,11,10,Vinissimus,1001,Famille Moussé Champagne,Famille Moussé,White - Sparkling',
+      '42,901,27/06/2025,27/06/2025,Unknown,EUR,0,1,0,Offert Clémence,1001,Famille Moussé Champagne,Famille Moussé,White - Sparkling',
+    ].join('\n');
+    let d = emptyCaveFile();
+    const a = addWine(d, draft({ domaine: 'Famille Moussé', color: 'bulles' }), [{ place: 'Sens', shelf: '', n: 10 }]);
+    d = { ...a.data, wines: a.data.wines.map((w) => ({ ...w, ctId: '42', purchases: [] })) };
+    const plan = buildCtImport([{ name: 'My Purchases.csv', text: csv }], d);
+    expect(plan.files[0]!.kind).toBe('purchases');
+    expect(plan.stats.bottles).toBe(0);
+    expect(plan.stats.purchases).toBe(2);
+    const out = applyCtImport(d, plan, {});
+    const w = out.wines[0]!;
+    expect(bottles(w)).toBe(10);
+    expect(w.purchases).toEqual([
+      { id: 'p:900', date: '2026-07-04', n: 11, price: 39, note: 'Vinissimus', ctId: 'p:900' },
+      { id: 'p:901', date: '2025-06-27', n: 1, price: null, note: 'Offert Clémence', ctId: 'p:901' },
+    ]);
+    // Réimporter n'ajoute rien.
+    expect(applyCtImport(out, buildCtImport([{ name: 'My Purchases.csv', text: csv }], out), {}).wines[0]!.purchases).toHaveLength(2);
+  });
+
+  it('retrace le stock en fin d’année à rebours depuis aujourd’hui', async () => {
+    const { stockPerYear } = await import('./reports');
+    let d = emptyCaveFile();
+    const a = addWine(d, draft({ domaine: 'A' }), [{ place: 'Sens', shelf: '', n: 5 }]);
+    d = { ...a.data, wines: a.data.wines.map((w) => ({ ...w, purchases: [{ id: 'p1', date: '2023-03-01', n: 6, price: null, note: '' }, { id: 'p2', date: '2025-05-01', n: 2, price: null, note: '' }] })) };
+    d = takeBottle(d, a.id, { ...exit, date: '2024-06-01', from: { place: 'Sens', shelf: '' } }).data;
+    d = takeBottle(d, a.id, { ...exit, date: '2026-02-01', reason: 'offerte', from: { place: 'Sens', shelf: '' } }).data;
+    d = takeBottle(d, a.id, { ...exit, date: '2026-03-01', reason: 'exterieur' }).data;
+    // Stock actuel : 3. À rebours : fin 2025 = 3 + 1 sortie 2026 = 4 ; fin 2024 = 4 − 2 entrées 2025 = 2 ; fin 2023 = 2 + 1 sortie 2024 = 3.
+    // (Les achats ne collent pas au stock de départ : c'est voulu, le stock réel d'aujourd'hui fait foi.)
+    expect(stockPerYear(d.wines, 2026)).toEqual([
+      { year: 2023, added: 6, removed: 0, end: 3 },
+      { year: 2024, added: 0, removed: 1, end: 2 },
+      { year: 2025, added: 2, removed: 0, end: 4 },
+      { year: 2026, added: 0, removed: 1, end: 3 },
+    ]);
+    expect(stockPerYear(emptyCaveFile().wines, 2026)).toEqual([]);
   });
 });

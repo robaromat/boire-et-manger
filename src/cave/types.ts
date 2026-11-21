@@ -58,6 +58,16 @@ export interface Exit {
   auteur: string;
 }
 
+/** Bouteilles entrées en cave (achat, cadeau reçu) : sert à retracer l'évolution de la cave dans les Rapports. */
+export interface Purchase {
+  id: string; // « p_… » ou « p:<iPurchase> » (import CellarTracker)
+  date: string; // AAAA-MM-JJ
+  n: number;
+  price: number | null; // prix d'une bouteille ; null = offerte ou inconnu
+  note: string; // « Vinissimus », « Offert par Clémence »
+  ctId?: string;
+}
+
 /** Champs remplis par ChatGPT, affichés « estimation » tant que tu ne les as pas corrigés. */
 export const ESTIMABLE = ['window', 'grapes', 'style', 'pairings', 'region', 'labels'] as const;
 export type Estimable = (typeof ESTIMABLE)[number];
@@ -115,6 +125,8 @@ export interface Wine {
   label?: PhotoId; // photo de l'étiquette
   stock: Slot[];
   history: Exit[]; // le plus récent en premier
+  /** Entrées en cave, la plus récente en premier ; absent sur les vins créés avant la v1.9. */
+  purchases?: Purchase[];
   ctId?: string; // iWine CellarTracker
   service?: WineService;
   labels: WineLabel[];
@@ -142,6 +154,8 @@ export interface CaveFile {
   places?: PlaceDef[];
 }
 
+export const sortPurchases = (xs: Purchase[]) => [...xs].sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
+
 export const CAVE_FILE = 'cave.json';
 export const emptyCaveFile = (): CaveFile => ({ schemaVersion: 1, wines: [], wishes: [] });
 
@@ -150,6 +164,15 @@ const str = (x: unknown) => (typeof x === 'string' ? x : '');
 const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : null);
 const strs = (x: unknown) => (Array.isArray(x) ? x.filter((s): s is string => typeof s === 'string') : []);
 const asColor = (x: unknown): WineColor => ((COLORS as readonly string[]).includes(x as string) ? (x as WineColor) : 'rouge');
+
+function parsePurchase(x: Record<string, unknown>, i: number): Purchase | null {
+  const date = str(x.date);
+  const n = Math.round(num(x.n) ?? 0);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || n <= 0) return null;
+  const ctId = str(x.ctId) || undefined;
+  // Les achats écrits par l'import CellarTracker n'ont que leur ctId : il sert d'identifiant (stable d'un appareil à l'autre).
+  return { id: str(x.id) || ctId || `p_${date}_${n}_${i}`, date, n, price: num(x.price), note: str(x.note), ...(ctId ? { ctId } : {}) };
+}
 
 function parseExit(x: Record<string, unknown>): Exit | null {
   if (typeof x.id !== 'string' || !(REASONS as readonly string[]).includes(x.reason as string)) return null;
@@ -196,6 +219,9 @@ export function parseCaveFile(raw: unknown): CaveFile | null {
         ? w.stock.filter(isObj).map((s) => ({ place: str(s.place), shelf: str(s.shelf), n: Math.max(0, Math.round(num(s.n) ?? 0)) }))
         : [],
       history: Array.isArray(w.history) ? w.history.filter(isObj).map(parseExit).filter((e): e is Exit => !!e) : [],
+      ...(Array.isArray(w.purchases)
+        ? { purchases: sortPurchases(w.purchases.filter(isObj).map(parsePurchase).filter((e): e is Purchase => !!e)) }
+        : {}),
       createdAt: str(w.createdAt) || new Date(0).toISOString(),
       updatedAt: str(w.updatedAt) || new Date(0).toISOString(),
     });

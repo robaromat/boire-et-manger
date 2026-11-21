@@ -1,9 +1,9 @@
 import { newId } from '../lib/ids';
-import { DEFAULT_PLACES, WINE_LABEL_NAMES, isTasting, type CaveFile, type Exit, type PlaceDef, type Slot, type Wine, type WineColor, type Wish } from './types';
+import { DEFAULT_PLACES, WINE_LABEL_NAMES, sortPurchases, type Purchase, isTasting, type CaveFile, type Exit, type PlaceDef, type Slot, type Wine, type WineColor, type Wish } from './types';
 
 // Opérations sur la cave, sans effet de bord (testées dans cave.test.ts).
 
-export type WineDraft = Omit<Wine, 'id' | 'stock' | 'history' | 'createdAt' | 'updatedAt'>;
+export type WineDraft = Omit<Wine, 'id' | 'stock' | 'history' | 'purchases' | 'createdAt' | 'updatedAt'>;
 
 export const emptyWineDraft = (): WineDraft => ({
   domaine: '',
@@ -245,9 +245,16 @@ function mergeSlots(stock: Slot[], add: Slot[]): Slot[] {
   return out;
 }
 
+/** Une entrée en cave de `n` bouteilles aujourd'hui, au prix de la fiche (pour la courbe des Rapports). */
+function entry(w: Pick<Wine, 'price'>, n: number): Purchase {
+  return { id: newId('p'), date: todayIso(), n, price: w.price, note: '' };
+}
+const withEntry = (w: Wine, n: number): Wine => (n > 0 ? { ...w, purchases: sortPurchases([entry(w, n), ...(w.purchases ?? [])]) } : w);
+
 export function addWine(d: CaveFile, draft: WineDraft, stock: Slot[] = []): { data: CaveFile; id: string } {
   const t = now();
-  const w: Wine = { ...draft, id: newId('w'), stock: mergeSlots([], stock), history: [], createdAt: t, updatedAt: t };
+  const s = mergeSlots([], stock);
+  const w: Wine = withEntry({ ...draft, id: newId('w'), stock: s, history: [], createdAt: t, updatedAt: t }, s.reduce((a, x) => a + x.n, 0));
   return { data: { ...d, wines: [w, ...d.wines] }, id: w.id };
 }
 
@@ -256,10 +263,16 @@ export const updateWine = (d: CaveFile, id: string, patch: Partial<Wine>): CaveF
 export const deleteWine = (d: CaveFile, id: string): CaveFile => ({ ...d, wines: d.wines.filter((w) => w.id !== id) });
 
 /** Range des bouteilles dans une fiche existante. */
-export const addStock = (d: CaveFile, id: string, slots: Slot[]): CaveFile => touch(d, id, (w) => ({ ...w, stock: mergeSlots(w.stock, slots) }));
+export const addStock = (d: CaveFile, id: string, slots: Slot[]): CaveFile =>
+  touch(d, id, (w) => withEntry({ ...w, stock: mergeSlots(w.stock, slots) }, slots.reduce((a, x) => a + Math.max(0, x.n), 0)));
 
 /** Remplace les emplacements (feuille « Déplacer ou ajouter »). */
-export const setStock = (d: CaveFile, id: string, slots: Slot[]): CaveFile => touch(d, id, (w) => ({ ...w, stock: mergeSlots([], slots) }));
+export const setStock = (d: CaveFile, id: string, slots: Slot[]): CaveFile =>
+  touch(d, id, (w) => {
+    const stock = mergeSlots([], slots);
+    // Des bouteilles en plus = une entrée ; en moins = une correction (pas une sortie, rien n'est noté).
+    return withEntry({ ...w, stock }, stock.reduce((a, x) => a + x.n, 0) - bottles(w));
+  });
 
 /**
  * Sort une bouteille : stock −1 à l'emplacement `from` (sauf « dégustée ailleurs »), et une ligne dans l'historique.

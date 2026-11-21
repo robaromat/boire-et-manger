@@ -87,3 +87,43 @@ export function exitsPerYear(wines: Wine[], from?: number, to?: number): { year:
   for (let y = a; y <= b; y++) out.push({ year: y, ...(m.get(y) ?? { drunk: 0, other: 0 }) });
   return out;
 }
+
+export interface StockYear {
+  year: number;
+  /** Bouteilles entrées (achats, cadeaux reçus). */
+  added: number;
+  /** Bouteilles sorties (bues, offertes, bouchonnées… ; pas celles « dégustées ailleurs »). */
+  removed: number;
+  /** Bouteilles en cave au 31 décembre (aujourd'hui pour l'année en cours). */
+  end: number;
+}
+
+/**
+ * Évolution de la cave, année par année. Le stock est reconstruit à rebours depuis le stock actuel
+ * (fin d'année Y = stock actuel − entrées après Y + sorties après Y) : il reste juste aujourd'hui même si
+ * des achats anciens manquent ; un manque ne fausse que les années d'avant.
+ * Vide tant qu'aucun vin n'a de date d'entrée (`purchases`).
+ */
+export function stockPerYear(wines: Wine[], year: number): StockYear[] {
+  const add = new Map<number, number>();
+  const rem = new Map<number, number>();
+  const bump = (m: Map<number, number>, date: string, n: number) => {
+    const y = parseInt(date.slice(0, 4), 10);
+    if (y > 1900 && y <= year) m.set(y, (m.get(y) ?? 0) + n);
+  };
+  for (const w of wines) {
+    for (const p of w.purchases ?? []) bump(add, p.date, p.n);
+    for (const x of w.history) if (x.reason !== 'exterieur') bump(rem, x.date, 1);
+  }
+  if (!add.size) return [];
+  const first = Math.min(...add.keys(), ...rem.keys());
+  let end = wines.reduce((a, w) => a + bottles(w), 0);
+  const out: StockYear[] = [];
+  for (let y = year; y >= first; y--) {
+    const added = add.get(y) ?? 0;
+    const removed = rem.get(y) ?? 0;
+    out.push({ year: y, added, removed, end: Math.max(0, end) });
+    end = end - added + removed;
+  }
+  return out.reverse();
+}

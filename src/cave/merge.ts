@@ -1,6 +1,6 @@
 import { mergeEntities } from '../sync/merge';
 import { sameSlot, sortHistory } from './ops';
-import type { CaveFile, Exit, Slot, Wine, Wish } from './types';
+import { sortPurchases, type CaveFile, type Exit, type Purchase, type Slot, type Wine, type Wish } from './types';
 
 // Fusion « à trois » de cave.json (même principe que Courses et Recettes, voir sync/merge.ts) :
 // vin par vin ; si les deux appareils ont modifié le même vin, le plus récent gagne pour ses champs,
@@ -24,7 +24,10 @@ function mergeStock(l: Slot[], r: Slot[], b: Slot[] | undefined): Slot[] {
 function mergeWine(l: Wine, r: Wine, b: Wine | undefined): Wine {
   const win = l.updatedAt >= r.updatedAt ? l : r;
   const history = mergeEntities<Exit>(byId(b?.history), byId(l.history), byId(r.history), (x) => x);
-  return { ...win, stock: mergeStock(l.stock, r.stock, b?.stock), history: sortHistory([...history.values()]) };
+  const merged: Wine = { ...win, stock: mergeStock(l.stock, r.stock, b?.stock), history: sortHistory([...history.values()]) };
+  if (!l.purchases && !r.purchases) return merged;
+  const purchases = mergeEntities<Purchase>(byId(b?.purchases), byId(l.purchases), byId(r.purchases), (x) => x);
+  return { ...merged, purchases: sortPurchases([...purchases.values()]) };
 }
 
 export function mergeCave(base: CaveFile | null, local: CaveFile, remote: CaveFile): CaveFile {

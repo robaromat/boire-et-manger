@@ -15,6 +15,7 @@ const KIND_LABELS: Record<CtFileKind, string> = {
   consumed: 'les bouteilles sorties',
   notes: 'tes notes de dégustation',
   wishlist: 'ta liste d’envies',
+  purchases: 'tes achats (pour l’évolution de la cave)',
   unknown: 'non reconnu, ignoré',
 };
 
@@ -83,7 +84,7 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
           <div class="opt static">
             <Icon name="glass" />
             <span>
-              2. Exporte aussi tes bouteilles bues, tes notes et tes envies<small>Consumed (les sorties et leur raison), Tasting Notes et Wish List, en CSV aussi</small>
+              2. Exporte aussi tes bouteilles bues, tes notes, tes envies et tes achats<small>Consumed (les sorties et leur raison), Tasting Notes, Wish List et Purchases, en CSV aussi</small>
             </span>
           </div>
           <label class="opt">
@@ -139,6 +140,12 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
           <div>
             <b>{s.wishes}</b>
             <span>envies</span>
+          </div>
+        )}
+        {s.purchases > 0 && (
+          <div>
+            <b>{s.purchases}</b>
+            <span>achats</span>
           </div>
         )}
       </div>

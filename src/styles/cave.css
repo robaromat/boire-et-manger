@@ -164,4 +164,13 @@
 .vbar-col i:first-child { border-radius: 4px 4px 0 0; }
 .vbar-col i.o { background: color-mix(in srgb, var(--accent) 35%, var(--card)); }
 .vbar-y { position: absolute; bottom: -20px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rep-lead { margin: 0 0 4px; }
+.rep-table { width: 100%; border-collapse: collapse; margin-top: 34px; font-variant-numeric: tabular-nums; font-size: 14px; }
+.rep-table th, .rep-table td { padding: 7px 4px; text-align: right; border-bottom: 1px solid var(--line); }
+.rep-table thead th { font-size: 12px; font-weight: 600; color: var(--muted); }
+.rep-table th:first-child { text-align: left; }
+.rep-table tbody th { font-weight: 600; }
+.rep-table td { color: var(--muted); }
+.rep-table td.plus { color: var(--accent); font-weight: 600; }
+.rep-table td.minus, .rep-table td:last-child { color: var(--ink); }
 .rep .block:has(.vbars) { padding-bottom: 18px; }

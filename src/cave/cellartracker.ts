@@ -1,16 +1,17 @@
 import { newId } from '../lib/ids';
 import { csvRecords } from './csv';
 import { emptyWineDraft, findSame, norm, sameSlot, sortHistory } from './ops';
-import type { CaveFile, Exit, Reason, Slot, Wine, WineColor, WineLabel, Wish } from './types';
+import { sortPurchases, type CaveFile, type Exit, type Purchase, type Reason, type Slot, type Wine, type WineColor, type WineLabel, type Wish } from './types';
 
 // Import des exports CSV de CellarTracker (abonnement terminé le 14/12/2026).
 //   - « Inventory » (ou « My Cellar ») : une ligne par bouteille en stock (ou par vin avec Quantity), avec Location et Bin ;
 //   - « Consumed » : les bouteilles sorties, avec leur raison (Drank, Gave away, Spoiled…) ;
-//   - « Notes » : les notes de dégustation (sur 100) et leurs commentaires.
+//   - « Notes » : les notes de dégustation (sur 100) et leurs commentaires ;
+//   - « Purchases » : les achats (date, quantité, prix, magasin ou note), pour l'évolution de la cave dans les Rapports.
 // Les colonnes sont reconnues par leur nom, quel que soit l'ordre. La valeur estimée (Valuation) n'est jamais reprise.
 // Rien n'est enregistré avant l'écran de revue : buildCtImport prépare, applyCtImport écrit.
 
-export type CtFileKind = 'inventory' | 'consumed' | 'notes' | 'wishlist' | 'unknown';
+export type CtFileKind = 'inventory' | 'consumed' | 'notes' | 'wishlist' | 'purchases' | 'unknown';
 
 export interface CtFile {
   name: string;
@@ -32,7 +33,7 @@ export interface CtImport {
   locations: CtLocation[];
   /** Liste d'envies (« Wish List »), sans celles déjà dans les envies. */
   wishes: Wish[];
-  stats: { wines: number; bottles: number; tastings: number; exits: number; noWindow: number; merged: number; elsewhere: number; wishes: number };
+  stats: { wines: number; bottles: number; tastings: number; exits: number; noWindow: number; merged: number; elsewhere: number; wishes: number; purchases: number };
 }
 
 type Rec = Record<string, string>;
@@ -48,6 +49,8 @@ export function detectKind(r: Rec | undefined): CtFileKind {
   if (!r) return 'unknown';
   if ('iconsumed' in r || 'consumed' in r || 'consumptionnote' in r) return 'consumed';
   if ('itaggedwine' in r || 'listname' in r) return 'wishlist';
+  // Avant « inventory » : un export d'achats a aussi iWine et Quantity, mais ce n'est pas du stock.
+  if ('ipurchase' in r || ('purchasedate' in r && 'remaining' in r)) return 'purchases';
   if ('tastingnotes' in r || 'inote' in r || 'tastingdate' in r) return 'notes';
   if ('iwine' in r && ('iinventory' in r || 'location' in r || 'bin' in r || 'quantity' in r)) return 'inventory';
   return 'unknown';
@@ -329,6 +332,27 @@ export function buildCtImport(files: { name: string; text: string }[], existing:
       if (price != null && w.price == null) w.price = price;
     }
   }
+  // Achats : une ligne par achat ; StoreName est souvent « Unknown », la vraie info est alors dans OrderNumber.
+  for (const f of parsed.filter((x) => x.kind === 'purchases')) {
+    const order = dateOrder(f.recs.map((r) => get(r, 'purchasedate', 'deliverydate')));
+    for (const r of f.recs) {
+      const date = ctDate(get(r, 'purchasedate', 'deliverydate'), order);
+      const n = int(get(r, 'quantity')) ?? 0;
+      if (!date || n <= 0) continue;
+      const w = wineOf(r);
+      const ctId = `p:${get(r, 'ipurchase') || `${keyOf(r)}:${date}:${n}`}`;
+      const p: Purchase = {
+        id: ctId,
+        date,
+        n,
+        price: money(get(r, 'price', 'nativeprice')),
+        note: [get(r, 'storename'), get(r, 'ordernumber')].map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' · '),
+        ctId,
+      };
+      if (!(w.purchases ?? []).some((x) => x.id === p.id)) w.purchases = [...(w.purchases ?? []), p];
+    }
+  }
+
   // Notes sans bouteille sortie : dégustées ailleurs (salon, restaurant, chez des amis).
   for (const n of notes.filter((x) => !x.used)) {
     const w = wines.get(n.wine);
@@ -378,7 +402,7 @@ export function buildCtImport(files: { name: string; text: string }[], existing:
   const out = [...wines.values()].map((w) => {
     const same = existing.wines.find((x) => x.ctId && x.ctId === w.ctId) ?? findSame(existing, w);
     if (same) merged++;
-    return { ...w, id: same?.id ?? w.id, history: sortHistory(w.history) };
+    return { ...w, id: same?.id ?? w.id, history: sortHistory(w.history), ...(w.purchases ? { purchases: sortPurchases(w.purchases) } : {}) };
   });
   const tast = out.flatMap((w) => w.history).filter((x) => x.reason === 'bue' || x.reason === 'ailleurs' || x.reason === 'exterieur');
   return {
@@ -395,6 +419,7 @@ export function buildCtImport(files: { name: string; text: string }[], existing:
       merged,
       elsewhere: out.filter((w) => !w.stock.length).length,
       wishes: wishes.length,
+      purchases: out.reduce((a, w) => a + (w.purchases?.length ?? 0), 0),
     },
   };
 }
@@ -439,6 +464,9 @@ export function applyCtImport(d: CaveFile, plan: CtImport, places: Record<string
       labels: cur.labels?.length ? cur.labels : w.labels,
       stock: w.stock.length ? stock : cur.stock,
       history: sortHistory([...cur.history, ...history.filter((x) => !known.has(x.ctId))]),
+      ...(w.purchases?.length || cur.purchases
+        ? { purchases: sortPurchases([...(cur.purchases ?? []), ...(w.purchases ?? []).filter((p) => !(cur.purchases ?? []).some((x) => x.id === p.id))]) }
+        : {}),
       updatedAt: t,
     };
   }
