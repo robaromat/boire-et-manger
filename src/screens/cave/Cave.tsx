@@ -12,6 +12,7 @@ import { AddSheet, type AddWineResult } from './AddSheet';
 import { Home, view } from './Home';
 import { ImportSheet } from './ImportSheet';
 import { WinePage, type StartSheet } from './WinePage';
+import { Reports } from './Reports';
 import type { WineKind } from './WineEditor';
 
 // Onglet Cave : l'accueil (4 vues) et la fiche ouverte (#/cave/w_…). Sur un écran large, les deux côte à côte.
@@ -24,7 +25,8 @@ export function Cave({ openId }: { openId?: string }) {
   const [add, setAdd] = useState<AddState | null>(null);
   const [importing, setImporting] = useState(false);
   const [start, setStart] = useState<{ id: string; sheet: StartSheet } | null>(null);
-  const wine = openId ? data?.wines.find((w) => w.id === openId) : undefined;
+  const reports = openId === 'rapports';
+  const wine = openId && !reports ? data?.wines.find((w) => w.id === openId) : undefined;
 
   const open = (id: string) => navigate({ name: 'tab', tab: 'cave', sub: id }, { replace: !!openId });
   const close = () => back({ name: 'tab', tab: 'cave' });
@@ -36,7 +38,7 @@ export function Cave({ openId }: { openId?: string }) {
 
   // Fiche supprimée (ou absente sur cet appareil) : retour à l'accueil.
   useEffect(() => {
-    if (openId && data && !wine) navigate({ name: 'tab', tab: 'cave' }, { replace: true });
+    if (openId && !reports && data && !wine) navigate({ name: 'tab', tab: 'cave' }, { replace: true });
   }, [openId, !!data, !!wine]);
 
   const bought = (w: Wish) => {
@@ -88,10 +90,12 @@ export function Cave({ openId }: { openId?: string }) {
   };
 
   return (
-    <div class="rec cave" data-open={wine ? '' : undefined}>
-      <Home data={data} openId={wine?.id} onOpen={open} onAdd={() => setAdd({})} onImport={() => setImporting(true)} onBought={bought} />
+    <div class="rec cave" data-open={wine || reports ? '' : undefined}>
+      <Home data={data} openId={wine?.id} onOpen={open} onAdd={() => setAdd({})} onImport={() => setImporting(true)} onBought={bought} onReports={() => open('rapports')} />
       <div class="rec-page">
-        {wine ? (
+        {reports && data ? (
+          <Reports data={data} onBack={close} />
+        ) : wine ? (
           <WinePage key={wine.id} w={wine} onBack={close} start={start?.id === wine.id ? start.sheet : null} />
         ) : (
           <div class="rec-page-empty">

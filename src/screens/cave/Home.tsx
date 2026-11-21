@@ -39,6 +39,7 @@ export function Home(props: {
   onAdd: () => void;
   onImport: () => void;
   onBought: (w: Wish) => void;
+  onReports: () => void;
 }) {
   const { data, openId, onOpen } = props;
   const e = caveEngine.value;
@@ -309,7 +310,13 @@ export function Home(props: {
 
   return (
     <div class="rec-home">
-      <Topbar title="Cave" engine={e} photos />
+      <Topbar title="Cave" engine={e} photos>
+        {data && data.wines.length > 0 && (
+          <button class="iconbtn" aria-label="Rapports" onClick={props.onReports}>
+            <Icon name="chart" />
+          </button>
+        )}
+      </Topbar>
       <div class="rec-scroll">
         <div class="seg" role="group" aria-label="Vue">
           {VIEWS.map(([k, n]) => (

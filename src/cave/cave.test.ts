@@ -354,3 +354,30 @@ describe('CellarTracker : régions en français', () => {
     expect([frCountry('Italy'), frCountry('France')]).toEqual(['Italie', 'France']);
   });
 });
+
+describe('cave : rapports', () => {
+  it('fenêtres, couleurs, top, sorties par an', async () => {
+    const { windowBuckets, byColor, top, exitsPerYear } = await import('./reports');
+    let d = emptyCaveFile();
+    d = addWine(d, draft({ domaine: 'A', color: 'rouge', region: 'Bordeaux', grapes: 'Merlot, cabernet', from: 2020, to: 2025 }), [{ place: 'Sens', shelf: '1', n: 3 }]).data;
+    d = addWine(d, draft({ domaine: 'B', color: 'blanc', region: 'Loire', grapes: 'Chenin', from: 2024, to: 2026 }), [{ place: 'Bozel', shelf: '', n: 2 }]).data;
+    d = addWine(d, draft({ domaine: 'C', color: 'rouge', region: 'Bordeaux', from: 2028, to: 2040 }), [{ place: 'Sens', shelf: '2', n: 1 }]).data;
+    d = addWine(d, draft({ domaine: 'D', color: 'bulles' }), [{ place: 'Sens', shelf: '', n: 4 }]).data;
+    const wb = windowBuckets(d.wines, 2026);
+    expect(wb.map((b) => b.n)).toEqual([3, 2, 0, 0, 0, 1, 4]);
+    expect(byColor(d.wines)).toEqual([{ color: 'rouge', n: 4 }, { color: 'blanc', n: 2 }, { color: 'bulles', n: 4 }]);
+    expect(top(d.wines, 'region')).toEqual([{ label: 'Bordeaux', n: 4 }, { label: 'Loire', n: 2 }]);
+    expect(top(d.wines, 'grapes')[0]).toEqual({ label: 'Merlot', n: 3 });
+    expect(top(d.wines, 'place')).toEqual([{ label: 'Sens', n: 8 }, { label: 'Bozel', n: 2 }]);
+    expect(top(d.wines, 'region', 1)).toEqual([{ label: 'Autres', n: 6 }]);
+    const a = d.wines.find((w) => w.domaine === 'A')!;
+    let e = takeBottle(d, a.id, { ...exit, date: '2024-05-01', from: { place: 'Sens', shelf: '1' } }).data;
+    e = takeBottle(e, a.id, { ...exit, date: '2026-01-01', reason: 'offerte', from: { place: 'Sens', shelf: '1' } }).data;
+    e = takeBottle(e, a.id, { ...exit, date: '2026-02-01', reason: 'exterieur' }).data;
+    expect(exitsPerYear(e.wines)).toEqual([
+      { year: 2024, drunk: 1, other: 0 },
+      { year: 2025, drunk: 0, other: 0 },
+      { year: 2026, drunk: 0, other: 1 },
+    ]);
+  });
+});

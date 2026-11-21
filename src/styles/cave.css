@@ -139,3 +139,29 @@
 .fchip { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .fchip .i { width: 15px; height: 15px; }
 .cave .searchrow .filterbtn { flex: none; }
+
+/* Rapports */
+.rep-head { display: flex; align-items: center; gap: 6px; margin-left: -10px; }
+.rep-head h1 { margin: 0; }
+.rep-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.rep-tiles div { padding: 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); display: grid; gap: 2px; }
+.rep-tiles b { font-family: var(--f-display); font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+.rep-tiles span { font-size: 13px; color: var(--muted); }
+.rep-select { font: inherit; font-family: var(--f-ui); font-size: 15px; font-weight: 600; border: 1px solid var(--line); border-radius: 10px; background: var(--card); padding: 4px 8px; color: var(--ink); }
+.hbars { display: grid; gap: 10px; }
+.hbar { display: grid; gap: 3px; }
+.hbar-l { font-size: 14px; color: var(--ink); overflow-wrap: anywhere; }
+.hbar-track { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hbar-track i { display: block; height: 18px; min-width: 4px; border-radius: 0 4px 4px 0; background: var(--bc, var(--accent)); flex: none; max-width: calc(100% - 44px); }
+.hbar-track b { font-size: 13px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rep-legend { padding: 0 0 10px; }
+.rep-legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--bc); }
+.vbars { display: flex; align-items: flex-end; gap: 4px; height: 190px; border-bottom: 1px solid var(--line); padding-top: 18px; }
+.vbar { flex: 1; min-width: 0; height: 100%; display: grid; grid-template-rows: auto 1fr; justify-items: center; position: relative; }
+.vbar-n { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; height: 16px; }
+.vbar-col { width: 100%; max-width: 34px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; }
+.vbar-col i { display: block; width: 100%; background: var(--accent); min-height: 2px; }
+.vbar-col i:first-child { border-radius: 4px 4px 0 0; }
+.vbar-col i.o { background: color-mix(in srgb, var(--accent) 35%, var(--card)); }
+.vbar-y { position: absolute; bottom: -20px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rep .block:has(.vbars) { padding-bottom: 18px; }
