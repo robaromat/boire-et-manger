@@ -29,6 +29,24 @@ export const whereText = (w: Wine) =>
     .map(slotLabel)
     .join(', ');
 
+/** Vignette d'un vin dans une liste : la photo de l'étiquette (bordure + pastille de la couleur du vin),
+ *  sinon la bouteille dessinée de sa couleur. */
+export function WineArt({ w }: { w: Wine }) {
+  const url = usePhoto(w.label, 'thumb');
+  if (!url)
+    return (
+      <span class="bottle">
+        <BottleArt color={w.color} />
+      </span>
+    );
+  return (
+    <span class="wphoto" style={`--wc:var(--w-${w.color})`}>
+      <img src={url} alt="" loading="lazy" />
+      <Dot color={w.color} />
+    </span>
+  );
+}
+
 /** Ligne de vin dans une liste. */
 export function WineRow({ w, current, onOpen, sub }: { w: Wine; current?: boolean; onOpen: () => void; sub?: string }) {
   const y = YEAR();
@@ -36,9 +54,7 @@ export function WineRow({ w, current, onOpen, sub }: { w: Wine; current?: boolea
   const n = bottles(w);
   return (
     <button class="wrow" onClick={onOpen} aria-current={current ? 'true' : undefined}>
-      <span class="bottle">
-        <BottleArt color={w.color} />
-      </span>
+      <WineArt w={w} />
       <span class="t">
         <b>{wineName(w)}</b>
         <span class="meta">
