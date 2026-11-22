@@ -37,10 +37,20 @@ export interface CtImport {
 }
 
 type Rec = Record<string, string>;
+
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+/** CellarTracker laisse des entités HTML dans ses exports (« Sams&#333; », « l&apos;apéritif ») : on les décode. */
+export const decodeEntities = (s: string) =>
+  s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
+    if (e[0] !== '#') return ENTITIES[e.toLowerCase()] ?? m;
+    const n = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+    return n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m;
+  });
+
 const get = (r: Rec, ...keys: string[]) => {
   for (const k of keys) {
     const v = r[k];
-    if (v && !/^(unknown|n\/a|na|none|-)$/i.test(v)) return v;
+    if (v && !/^(unknown|n\/a|na|none|-)$/i.test(v)) return decodeEntities(v);
   }
   return '';
 };

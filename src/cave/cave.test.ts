@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyCtImport, buildCtImport, ctDate, ctReason, dateOrder, frCountry, frRegion, scoreToStars } from './cellartracker';
+import { applyCtImport, buildCtImport, ctDate, decodeEntities, ctReason, dateOrder, frCountry, frRegion, scoreToStars } from './cellartracker';
 import { csvRecords, decodeText, parseCsv } from './csv';
 import { draftFromLabel, type LabelRead } from './label';
 import { mergeCave } from './merge';
@@ -185,6 +185,12 @@ describe('CSV', () => {
 });
 
 describe('CellarTracker', () => {
+  it('décode les entités HTML des exports', () => {
+    expect(decodeEntities('Sams&#333; Cinsault')).toBe('Samsō Cinsault');
+    expect(decodeEntities('Diszn&#x151;k&#337;')).toBe('Disznőkő');
+    expect(decodeEntities('l&apos;apéritif &lt;20 mg &amp; co')).toBe("l'apéritif <20 mg & co");
+    expect(decodeEntities('R&D &inconnu;')).toBe('R&D &inconnu;');
+  });
   const inventory = [
     'iInventory,Barcode,Location,Bin,Size,Currency,Valuation,Price,StoreName,PurchaseDate,iWine,Type,Color,Category,Vintage,Wine,Producer,Varietal,Designation,Vineyard,Country,Region,SubRegion,Appellation,BeginConsume,EndConsume',
     '1,,Cellar,B2,750ml,EUR,30,16,Salon,3/15/2023,101,Red,Red,Dry,2020,Domaine des Roches Neuves Chinon Terres de Chinon,Domaine des Roches Neuves,Cabernet Franc,Terres de Chinon,Unknown,France,Loire Valley,Touraine,Chinon,2023,2026',
