@@ -99,13 +99,17 @@ export function CookMode({ r, portions: initial, onQuit, onClose }: { r: Recipe;
               </div>
             )}
             <div>
-              {r.ingredients.map((i, k) => (
-                <button key={k} class={`cook-ing${got.has(k) ? ' on' : ''}`} aria-pressed={got.has(k)} onClick={() => toggle(k)}>
-                  <span class="box">{got.has(k) && <Icon name="check" />}</span>
-                  <span>{i.name}</span>
-                  <span class="q">{formatQty(scaledQty(r, i, portions))}</span>
-                </button>
-              ))}
+              {/* Comme aux courses : un ingrédient coché descend en bas de la liste (dans l'ordre de la recette). */}
+              {r.ingredients
+                .map((i, k) => [i, k] as const)
+                .sort((a, b) => Number(got.has(a[1])) - Number(got.has(b[1])) || a[1] - b[1])
+                .map(([i, k]) => (
+                  <button key={k} class={`cook-ing${got.has(k) ? ' on' : ''}`} aria-pressed={got.has(k)} onClick={() => toggle(k)}>
+                    <span class="box">{got.has(k) && <Icon name="check" />}</span>
+                    <span>{i.name}</span>
+                    <span class="q">{formatQty(scaledQty(r, i, portions))}</span>
+                  </button>
+                ))}
             </div>
           </>
         ) : (
