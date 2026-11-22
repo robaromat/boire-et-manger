@@ -492,3 +492,14 @@ describe('cave : notes sur 10', () => {
     expect(again.wines[0]!.history.map((x) => x.rating)).toEqual([8, 6]);
   });
 });
+
+describe('cave : filtre par note', () => {
+  it('garde les vins dont la moyenne (ou la dégustation) atteint la note', () => {
+    const ex = (rating: number | null) => ({ id: 'x_' + rating, date: '2024-01-01', reason: 'bue' as const, rating, comment: '', dish: '', where: '', detail: '' });
+    const w = { ...parseCaveFile({ schemaVersion: 1, ratingScale: 10, wines: [{ id: 'w_1', domaine: 'D', stock: [], history: [ex(8), ex(7)] }], wishes: [] })!.wines[0]! };
+    expect(passFilter(w, { ...NO_FILTER, minRating: 7 })).toBe(true);
+    expect(passFilter(w, { ...NO_FILTER, minRating: 8 })).toBe(false);
+    expect(passFilter(w, { ...NO_FILTER, minRating: 8 }, undefined, 8)).toBe(true);
+    expect(passFilter({ ...w, history: [] }, { ...NO_FILTER, minRating: 5 })).toBe(false);
+  });
+});

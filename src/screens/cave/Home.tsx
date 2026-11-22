@@ -1,4 +1,5 @@
 import { signal } from '@preact/signals';
+import { fmtRating } from '../../cave/rating';
 import { useState } from 'preact/hooks';
 import { Icon } from '../../components/Icon';
 import { Sheet, sheetsSettled } from '../../components/Sheet';
@@ -229,7 +230,7 @@ export function Home(props: {
         </>
       );
     } else if (view.value === 'bus') {
-      const all = tastings(data).filter((x) => matchWine(x.wine, q) && passFilter(x.wine, f, f.place ? (x.exit.from ?? null) : undefined));
+      const all = tastings(data).filter((x) => matchWine(x.wine, q) && passFilter(x.wine, f, f.place ? (x.exit.from ?? null) : undefined, x.exit.rating));
       body = (
         <>
           <div class="sec-h">
@@ -391,6 +392,7 @@ function ActiveFilters() {
   if (f.place) chips.push([f.place, { place: '' }]);
   if (f.region) chips.push([f.region, { region: '' }]);
   if (f.appellation) chips.push([f.appellation, { appellation: '' }]);
+  if (f.minRating != null) chips.push([`Note ≥ ${fmtRating(f.minRating)}`, { minRating: null }]);
   return (
     <div class="pills" role="group" aria-label="Filtres actifs">
       {chips.map(([label, reset]) => (
@@ -413,7 +415,7 @@ function FilterSheet({ data, onClose }: { data: CaveFile; onClose: () => void })
   const set = (patch: Partial<WineFilter>) => (filter.value = { ...filter.value, ...patch });
   // Les choix tiennent compte des autres filtres : une région ne propose que ses appellations.
   const base = view.value === 'bus' ? data.wines : inCellar(data);
-  const pool = (except: keyof WineFilter) => base.filter((w) => passFilter(w, { ...f, place: '', [except]: except === 'color' ? null : '' }));
+  const pool = (except: keyof WineFilter) => base.filter((w) => passFilter(w, { ...f, place: '', [except]: except === 'color' || except === 'minRating' ? null : '' }));
   const regions = filterChoices(pool('region')).regions;
   const apps = filterChoices(pool('appellation')).appellations;
   const places = filterChoices(inCellar(data).filter((w) => passFilter(w, { ...f, place: '' }))).places;
@@ -433,6 +435,16 @@ function FilterSheet({ data, onClose }: { data: CaveFile; onClose: () => void })
             <button key={c} aria-pressed={f.color === c} onClick={() => set({ color: f.color === c ? null : c })}>
               <Dot color={c} size={10} />
               {COLOR_LABELS[c]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div class="field">
+        <label>Note {view.value === 'bus' ? 'de la dégustation' : 'moyenne de tes dégustations'}</label>
+        <div class="choice" role="group" aria-label="Note minimale">
+          {[5, 6, 7, 8, 9].map((k) => (
+            <button key={k} aria-pressed={f.minRating === k} onClick={() => set({ minRating: f.minRating === k ? null : k })}>
+              ≥ {k}/10
             </button>
           ))}
         </div>

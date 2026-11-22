@@ -319,15 +319,21 @@ export interface WineFilter {
   place: string;
   region: string;
   appellation: string;
+  /** Note minimale sur 10 : moyenne des dégustations du vin (ou note de la dégustation dans « Dégustés »). */
+  minRating: number | null;
 }
-export const NO_FILTER: WineFilter = { color: null, place: '', region: '', appellation: '' };
-export const filterActive = (f: WineFilter) => !!(f.color || f.place || f.region || f.appellation);
+export const NO_FILTER: WineFilter = { color: null, place: '', region: '', appellation: '', minRating: null };
+export const filterActive = (f: WineFilter) => !!(f.color || f.place || f.region || f.appellation || f.minRating != null);
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /** Le vin passe-t-il les filtres ? La cave regarde où sont ses bouteilles (ou, pour une dégustation, d'où elle sortait). */
-export function passFilter(w: Wine, f: WineFilter, from?: { place: string } | null): boolean {
+export function passFilter(w: Wine, f: WineFilter, from?: { place: string } | null, rating?: number | null): boolean {
   if (f.color && w.color !== f.color) return false;
+  if (f.minRating != null) {
+    const r = rating !== undefined ? rating : avgRating(w);
+    if (r == null || r < f.minRating) return false;
+  }
   if (f.region && !same(w.region, f.region)) return false;
   if (f.appellation && !same(w.appellation, f.appellation)) return false;
   if (f.place) return from !== undefined ? !!from && same(from.place, f.place) : w.stock.some((s) => s.n > 0 && same(s.place, f.place));
