@@ -3,6 +3,7 @@ import { usePhoto } from '../../photos/photos';
 import { bottles, slotLabel, vintageLabel, windowLabel, windowState, wineName } from '../../cave/ops';
 import type { Reason, Wine, WineColor } from '../../cave/types';
 import { recipesEngine } from '../../sync/store';
+import { fmtRating } from '../../cave/rating';
 
 // Petits morceaux communs aux écrans de la cave.
 
@@ -48,10 +49,10 @@ export function WineArt({ w }: { w: Wine }) {
 }
 
 /** Ligne de vin dans une liste. */
-export function WineRow({ w, current, onOpen, sub }: { w: Wine; current?: boolean; onOpen: () => void; sub?: string }) {
+export function WineRow({ w, current, onOpen, sub, count }: { w: Wine; current?: boolean; onOpen: () => void; sub?: string; count?: number }) {
   const y = YEAR();
   const st = windowState(w, y);
-  const n = bottles(w);
+  const n = count ?? bottles(w);
   return (
     <button class="wrow" onClick={onOpen} aria-current={current ? 'true' : undefined}>
       <WineArt w={w} />
@@ -97,3 +98,28 @@ export function recipeList(): { id: string; title: string; category: string }[] 
   return (recipesEngine.value?.data.value?.recipes ?? []).map((r) => ({ id: r.id, title: r.title, category: r.category }));
 }
 export const recipeTitle = (id: string) => recipesEngine.value?.data.value?.recipes.find((r) => r.id === id)?.title ?? null;
+
+/** Note d'un vin, sur 10. */
+export const Score = ({ n }: { n: number }) => (
+  <span class="wscore" aria-label={`${fmtRating(n).replace('/', ' sur ')}`}>
+    {fmtRating(n)}
+  </span>
+);
+
+/** Choix de la note sur 10 : un chiffre (le retoucher l'efface), puis « +½ » au besoin. */
+export function RatePicker({ value, onChange }: { value: number | null; onChange: (n: number | null) => void }) {
+  const whole = value == null ? null : Math.floor(value);
+  const half = value != null && value % 1 !== 0;
+  return (
+    <div class="rate10" role="group" aria-label="Note sur 10">
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((k) => (
+        <button key={k} class={whole === k ? 'on' : ''} aria-label={`${k} sur 10`} aria-pressed={whole === k} onClick={() => onChange(whole === k ? null : k + (half && k < 10 ? 0.5 : 0))}>
+          {k}
+        </button>
+      ))}
+      <button class={`half${half ? ' on' : ''}`} aria-pressed={half} disabled={whole == null || whole >= 10} onClick={() => whole != null && onChange(half ? whole : whole + 0.5)}>
+        +½
+      </button>
+    </div>
+  );
+}

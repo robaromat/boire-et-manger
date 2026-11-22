@@ -36,5 +36,5 @@ export function mergeCave(base: CaveFile | null, local: CaveFile, remote: CaveFi
   // Caves réglées : celles du côté qui les a changées.
   const localChanged = JSON.stringify(local.places ?? null) !== JSON.stringify(base?.places ?? null);
   const places = localChanged ? local.places : remote.places;
-  return { schemaVersion: 1, wines: [...wines.values()], wishes: [...wishes.values()], ...(places ? { places } : {}) };
+  return { schemaVersion: 1, ratingScale: 10, wines: [...wines.values()], wishes: [...wishes.values()], ...(places ? { places } : {}) };
 }

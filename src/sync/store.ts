@@ -79,7 +79,14 @@ function jsonEngine<T>(
         throw err;
       }),
     write: (d, sha, msg) => writeJsonFile(repoRef(), file, d, sha || null, msg),
-    load: () => idbGet<PersistedState<T>>(key),
+    // La copie du téléphone repasse par la même vérification que le fichier lu sur GitHub : un ancien
+    // format (ex. notes en étoiles avant les notes sur 10) est converti de la même façon des deux côtés.
+    load: async () => {
+      const st = await idbGet<PersistedState<T>>(key);
+      if (!st) return st;
+      const again = (d: T) => parse(d) ?? d;
+      return { ...st, local: st.local == null ? st.local : again(st.local), base: st.base ? { ...st.base, data: again(st.base.data) } : st.base };
+    },
     save: (st) => idbSet(key, st),
     merge,
     message,

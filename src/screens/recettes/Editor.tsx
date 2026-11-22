@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
+import { PhotoAdd } from '../../components/PhotoAdd';
 import { Icon } from '../../components/Icon';
 import { Sheet } from '../../components/Sheet';
 import { parseTags, qtyFromEditor, qtyToEditor, recipeAsText, stepsFromEditor, stepsToEditor, type RecipeDraft } from '../../recettes/ops';
@@ -171,11 +172,7 @@ export function Editor(props: {
               </button>
             </div>
           ) : (
-            <label class="photo-add">
-              <Icon name="camera" />
-              Ajouter une photo du plat
-              <input type="file" accept="image/*" hidden onChange={(e) => setCover(e.currentTarget.files?.[0] ?? null)} />
-            </label>
+            <PhotoAdd label="Photo du plat" onFiles={(f) => setCover(f[0] ?? null)} />
           )}
         </div>
       )}

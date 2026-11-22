@@ -5,6 +5,7 @@ import { showSnack } from '../../components/Snack';
 import { applyCtImport, buildCtImport, type CtFileKind, type CtImport } from '../../cave/cellartracker';
 import { decodeText } from '../../cave/csv';
 import { placeDefs } from '../../cave/ops';
+import { emptyCaveFile } from '../../cave/types';
 import { caveEngine, mutateCave } from '../../sync/store';
 
 // Import CellarTracker (maquette validée) : 1. exporter les CSV, 2. les choisir, 3. vérifier (chiffres, lieux à renommer),
@@ -191,7 +192,7 @@ export function ImportSheet({ onClose }: { onClose: () => void }) {
                           setNames((cur) => ({ ...cur, [l.name]: v }));
                         }}
                       >
-                        {[...new Set([...placeDefs(caveEngine.value?.data.value ?? { schemaVersion: 1, wines: [], wishes: [] }).map((x) => x.name), ...(l.name ? [l.name] : [])])].map((n) => (
+                        {[...new Set([...placeDefs(caveEngine.value?.data.value ?? emptyCaveFile()).map((x) => x.name), ...(l.name ? [l.name] : [])])].map((n) => (
                           <option key={n} value={n}>
                             {n === l.name ? `${n} (garder le nom)` : n}
                           </option>

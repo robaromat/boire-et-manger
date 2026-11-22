@@ -1,4 +1,5 @@
 import type { PhotoId } from '../recettes/types';
+import { migrateRating } from './rating';
 
 // Modèle de cave.json (dépôt privé boire-et-manger-data), issu du grill du 18-19/11/2026
 // et de la maquette Cave validée le 20/11/2026 (maquettes/maquette-bm-cave.html).
@@ -41,7 +42,7 @@ export interface Exit {
   id: string; // « x_… »
   date: string; // AAAA-MM-JJ
   reason: Reason;
-  rating: number | null; // 1 à 5, dégustations seulement
+  rating: number | null; // sur 10 (demi-points possibles), dégustations seulement
   comment: string;
   dish: string; // plat, en texte
   recipe?: string; // ou recette du carnet (id « r_… »)
@@ -148,6 +149,8 @@ export interface Wish {
 
 export interface CaveFile {
   schemaVersion: 1;
+  /** Notes sur 10. Absent = ancien fichier, notes en étoiles (1 à 5) converties à la lecture. */
+  ratingScale: 10;
   wines: Wine[];
   wishes: Wish[];
   /** Caves et clayettes proposées dans les listes ; absent = DEFAULT_PLACES. */
@@ -157,7 +160,7 @@ export interface CaveFile {
 export const sortPurchases = (xs: Purchase[]) => [...xs].sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id));
 
 export const CAVE_FILE = 'cave.json';
-export const emptyCaveFile = (): CaveFile => ({ schemaVersion: 1, wines: [], wishes: [] });
+export const emptyCaveFile = (): CaveFile => ({ schemaVersion: 1, ratingScale: 10, wines: [], wishes: [] });
 
 const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
 const str = (x: unknown) => (typeof x === 'string' ? x : '');
@@ -174,12 +177,14 @@ function parsePurchase(x: Record<string, unknown>, i: number): Purchase | null {
   return { id: str(x.id) || ctId || `p_${date}_${n}_${i}`, date, n, price: num(x.price), note: str(x.note), ...(ctId ? { ctId } : {}) };
 }
 
-function parseExit(x: Record<string, unknown>): Exit | null {
+function parseExit(x: Record<string, unknown>, stars: boolean): Exit | null {
   if (typeof x.id !== 'string' || !(REASONS as readonly string[]).includes(x.reason as string)) return null;
+  const r = num(x.rating);
   return {
     ...(x as unknown as Exit),
     date: str(x.date) || '1970-01-01',
-    rating: num(x.rating),
+    // Ancien fichier : étoiles → sur 10 (une note > 5 était déjà sur 10, écrite par une version récente).
+    rating: stars && !(r != null && r > 5) ? migrateRating(r, str(x.comment)) : r != null ? Math.min(10, r) : null,
     comment: str(x.comment),
     dish: str(x.dish),
     where: str(x.where),
@@ -191,6 +196,7 @@ function parseExit(x: Record<string, unknown>): Exit | null {
 /** Vérification minimale de cave.json ; complète les champs manquants plutôt que de tout refuser. */
 export function parseCaveFile(raw: unknown): CaveFile | null {
   if (!isObj(raw) || raw.schemaVersion !== 1 || !Array.isArray(raw.wines)) return null;
+  const stars = raw.ratingScale !== 10;
   const wines: Wine[] = [];
   for (const w of raw.wines) {
     if (!isObj(w) || typeof w.id !== 'string') continue;
@@ -218,7 +224,7 @@ export function parseCaveFile(raw: unknown): CaveFile | null {
       stock: Array.isArray(w.stock)
         ? w.stock.filter(isObj).map((s) => ({ place: str(s.place), shelf: str(s.shelf), n: Math.max(0, Math.round(num(s.n) ?? 0)) }))
         : [],
-      history: Array.isArray(w.history) ? w.history.filter(isObj).map(parseExit).filter((e): e is Exit => !!e) : [],
+      history: Array.isArray(w.history) ? w.history.filter(isObj).map((x) => parseExit(x, stars)).filter((e): e is Exit => !!e) : [],
       ...(Array.isArray(w.purchases)
         ? { purchases: sortPurchases(w.purchases.filter(isObj).map(parsePurchase).filter((e): e is Purchase => !!e)) }
         : {}),
@@ -242,5 +248,5 @@ export function parseCaveFile(raw: unknown): CaveFile | null {
   const places = Array.isArray(raw.places)
     ? raw.places.filter(isObj).map((p) => ({ name: str(p.name).trim(), shelves: strs(p.shelves).map((x) => x.trim()).filter(Boolean) })).filter((p) => p.name)
     : undefined;
-  return { schemaVersion: 1, wines, wishes, ...(places ? { places } : {}) };
+  return { schemaVersion: 1, ratingScale: 10, wines, wishes, ...(places ? { places } : {}) };
 }

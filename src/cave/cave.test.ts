@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { applyCtImport, buildCtImport, ctDate, decodeEntities, ctReason, dateOrder, frCountry, frRegion, scoreToStars } from './cellartracker';
+import { applyCtImport, buildCtImport, ctDate, decodeEntities, ctReason, dateOrder, frCountry, frRegion, scoreTo10 } from './cellartracker';
+import { migrateRating, ratingFromComment } from './rating';
 import { csvRecords, decodeText, parseCsv } from './csv';
 import { draftFromLabel, type LabelRead } from './label';
 import { mergeCave } from './merge';
@@ -219,8 +220,9 @@ describe('CellarTracker', () => {
     expect(ctReason('Spoiled (corked/oxidized) and returned to vendor').detail).toBe('rapportée au caviste');
     expect(ctReason('Drank from a friend’s cellar'.replace('’', "'")).reason).toBe('exterieur');
     expect(ctReason('Missing or presumed drunk').reason).toBe('disparue');
-    expect(scoreToStars(91)).toBe(4);
-    expect(scoreToStars(96)).toBe(5);
+    expect(scoreTo10(91)).toBe(9);
+    expect(scoreTo10(87)).toBe(8.5);
+    expect(scoreTo10(8)).toBe(8);
   });
 
   it('prépare l’import : vins, stock, lieux, dégustations, autres sorties', () => {
@@ -242,13 +244,13 @@ describe('CellarTracker', () => {
     const chinon = plan.wines.find((w) => w.ctId === '101')!;
     expect(chinon).toMatchObject({ domaine: 'Domaine des Roches Neuves', cuvee: 'Terres de Chinon', vintage: 2020, appellation: 'Chinon', price: 16, from: 2023, to: 2026 });
     expect(chinon.history.map((x) => [x.date, x.reason, x.rating, x.comment])).toEqual([
-      ['2026-11-08', 'bue', 4, 'Parfait maintenant.'],
+      ['2026-11-08', 'bue', 9, 'Parfait maintenant.'],
       ['2026-02-14', 'defaut', null, 'Bouchon'],
     ]);
     const bulles = plan.wines.find((w) => w.ctId === '202')!;
     expect([bulles.color, bulles.vintage]).toEqual(['bulles', null]);
     expect(plan.wines.find((w) => w.ctId === '303')!.size).toBe('Magnum');
-    expect(plan.wines.find((w) => w.ctId === '505')!.history[0]).toMatchObject({ reason: 'exterieur', rating: 3 });
+    expect(plan.wines.find((w) => w.ctId === '505')!.history[0]).toMatchObject({ reason: 'exterieur', rating: 9 });
   });
 
   it('écrit l’import avec les lieux renommés, sans doublon au 2e import', () => {
@@ -460,5 +462,33 @@ describe('cave : achats et évolution', () => {
       { year: 2026, added: 0, removed: 1, end: 3 },
     ]);
     expect(stockPerYear(emptyCaveFile().wines, 2026)).toEqual([]);
+  });
+});
+
+describe('cave : notes sur 10', () => {
+  it('lit la note écrite dans un commentaire', () => {
+    const cases: [string, number | null][] = [
+      ['7/10', 7], ['9/10.tres bien', 9], ['6,5/10. pas désagréable', 6.5], ['Pas mal. Très mineral. 8/10', 8],
+      ['Très bien. Assez sucré, parfait en apero , 9/10.', 9], ['7', 7], ['5. Fort en sulfites', 5], ['8.5' + String.fromCharCode(10) + 'Très bon', 8.5],
+      ['7.5 bien', 7.5], ['7 pas mal mais un peu vieux', 7], ['Bien ! 8.5', 8.5], ['10/10', 10],
+      ['cadeau hubert noel 2019', null], ['Noël 2020.pas mal', null], ['Anni 30 ans la tête dans les olives', null], ['2023 · très bien', null],
+    ];
+    for (const [c, n] of cases) expect(ratingFromComment(c), c).toBe(n);
+  });
+  it('convertit les anciennes étoiles, la note « /10 » écrite l’emporte', () => {
+    expect(migrateRating(4, '')).toBe(8);
+    expect(migrateRating(2, 'Bien 8/10')).toBe(8);
+    expect(migrateRating(null, '7.5 bien')).toBe(7.5);
+    expect(migrateRating(3, 'Mieux sur saumon' + String.fromCharCode(10) + '1')).toBe(6);
+    expect(migrateRating(null, 'cadeau')).toBeNull();
+  });
+  it('convertit un ancien cave.json une seule fois', () => {
+    const exit = (rating: number | null, comment: string) => ({ id: 'x_1', date: '2024-01-01', reason: 'bue', rating, comment, dish: '', where: '', detail: '' });
+    const wine = (h: object[]) => ({ id: 'w_1', domaine: 'D', stock: [], history: h });
+    const old = parseCaveFile({ schemaVersion: 1, wines: [wine([exit(4, ''), exit(null, '6/10')])], wishes: [] })!;
+    expect(old.ratingScale).toBe(10);
+    expect(old.wines[0]!.history.map((x) => x.rating)).toEqual([8, 6]);
+    const again = parseCaveFile(JSON.parse(JSON.stringify(old)))!;
+    expect(again.wines[0]!.history.map((x) => x.rating)).toEqual([8, 6]);
   });
 });

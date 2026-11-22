@@ -178,3 +178,9 @@
 .rep-table td.plus { color: var(--accent); font-weight: 600; }
 .rep-table td.minus, .rep-table td:last-child { color: var(--ink); }
 .rep .block:has(.vbars) { padding-bottom: 18px; }
+/* Notes sur 10 */
+.wscore { display: inline-block; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 13px; padding: 1px 7px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); }
+.rate10 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.rate10 button { height: 42px; border-radius: 12px; border: 1.5px solid var(--line); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+.rate10 button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.rate10 button:disabled { opacity: 0.4; }

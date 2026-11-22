@@ -1,4 +1,5 @@
 import { newId } from '../lib/ids';
+import { ratingFromComment } from './rating';
 import { csvRecords } from './csv';
 import { emptyWineDraft, findSame, norm, sameSlot, sortHistory } from './ops';
 import { sortPurchases, type CaveFile, type Exit, type Purchase, type Reason, type Slot, type Wine, type WineColor, type WineLabel, type Wish } from './types';
@@ -84,15 +85,11 @@ export function ctColor(...parts: string[]): WineColor {
   return 'rouge';
 }
 
-/** Note sur 100 → étoiles. */
-export function scoreToStars(score: number | null): number | null {
+/** Note CellarTracker (sur 100, parfois déjà sur 10) → sur 10, au demi-point. */
+export function scoreTo10(score: number | null): number | null {
   if (score == null || score <= 0) return null;
-  if (score <= 5) return Math.max(1, Math.round(score));
-  if (score >= 95) return 5;
-  if (score >= 90) return 4;
-  if (score >= 85) return 3;
-  if (score >= 80) return 2;
-  return 1;
+  const n = score <= 10 ? score : score / 10;
+  return Math.min(10, Math.round(n * 2) / 2);
 }
 
 export function ctReason(s: string): { reason: Reason; where: string; detail: string } {
@@ -327,7 +324,7 @@ export function buildCtImport(files: { name: string; text: string }[], existing:
         id: newId('x'),
         date,
         reason: why.reason,
-        rating: scoreToStars(note?.score ?? null),
+        rating: scoreTo10(note?.score ?? null) ?? ratingFromComment([note?.text, get(r, 'consumptionnote')].filter(Boolean).join(' ')),
         score: note?.score ?? undefined,
         comment: [note?.text, get(r, 'consumptionnote')].filter(Boolean).join('\n'),
         dish: '',
@@ -371,7 +368,7 @@ export function buildCtImport(files: { name: string; text: string }[], existing:
       id: newId('x'),
       date: n.date || '1970-01-01',
       reason: 'exterieur',
-      rating: scoreToStars(n.score),
+      rating: scoreTo10(n.score) ?? ratingFromComment(n.text),
       score: n.score ?? undefined,
       comment: n.text,
       dish: '',

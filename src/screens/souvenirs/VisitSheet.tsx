@@ -236,8 +236,12 @@ export function VisitSheet(props: {
               </button>
             </span>
           ))}
-          <label class="vadd" aria-label="Ajouter des photos">
+          <label class="vadd" aria-label="Prendre une photo">
             <Icon name="camera" />
+            <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => setFiles([...files, ...[...(e.currentTarget.files ?? [])]])} />
+          </label>
+          <label class="vadd" aria-label="Ajouter des photos de la galerie">
+            <Icon name="image" />
             <input type="file" accept="image/*" multiple hidden onChange={(e) => setFiles([...files, ...[...(e.currentTarget.files ?? [])]])} />
           </label>
         </div>

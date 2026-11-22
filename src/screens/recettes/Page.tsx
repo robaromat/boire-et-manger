@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
+import { PhotoAdd } from '../../components/PhotoAdd';
 import { Icon } from '../../components/Icon';
 import { Sheet, sheetsSettled } from '../../components/Sheet';
 import { showSnack } from '../../components/Snack';
@@ -472,11 +473,7 @@ function DoneSheet({ r, afterCook, onClose }: { r: Recipe; afterCook?: boolean; 
           </div>
         </div>
       ) : (
-        <label class="photo-add">
-          <Icon name="camera" />
-          Ajouter une photo du plat
-          <input type="file" accept="image/*" hidden onChange={(e) => setPhoto(e.currentTarget.files?.[0] ?? null)} />
-        </label>
+        <PhotoAdd label="Photo du plat" onFiles={(f) => setPhoto(f[0] ?? null)} />
       )}
       <button class="btn primary block" disabled={busy} onClick={() => void save()}>
         Enregistrer dans le journal

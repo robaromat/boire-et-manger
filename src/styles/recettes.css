@@ -211,3 +211,4 @@
 .check-k { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .check-item.alerte .check-k { color: var(--danger); }
 .check-sugg { color: var(--muted); }
+.photo-adds { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

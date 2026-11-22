@@ -10,8 +10,8 @@ import {
 } from '../../cave/ops';
 import { COLORS, COLOR_LABELS, type CaveFile, type Wine, type Wish } from '../../cave/types';
 import { caveEngine, mutateCave } from '../../sync/store';
-import { Stars, shortDate } from '../recettes/bits';
-import { BottleArt, Dot, Thumb, WineRow, YEAR, recipeTitle } from './bits';
+import { shortDate } from '../recettes/bits';
+import { BottleArt, Dot, Score, Thumb, WineRow, YEAR, recipeTitle } from './bits';
 
 // Accueil de la cave (maquette validée le 20/11/2026) : À boire (par défaut), Ma cave (plan ou liste), Dégustés, Envies.
 
@@ -45,7 +45,7 @@ export function Home(props: {
   const e = caveEngine.value;
   const q = query.value.trim();
   const [filterOpen, setFilterOpen] = useState(false);
-  const [shelf, setShelf] = useState<{ place: string; shelf: string; wines: Wine[] } | null>(null);
+  const [shelf, setShelf] = useState<{ place: string; shelf: string; items: { wine: Wine; n: number }[] } | null>(null);
   const row = (w: Wine, sub?: string) => <WineRow key={w.id} w={w} sub={sub} current={w.id === openId} onOpen={() => onOpen(w.id)} />;
   const y = YEAR();
 
@@ -184,7 +184,7 @@ export function Home(props: {
                         <button
                           key={s.shelf}
                           class="shelf"
-                          onClick={() => setShelf({ place: p.place, shelf: s.shelf, wines: s.items.map((x) => x.wine) })}
+                          onClick={() => setShelf({ place: p.place, shelf: s.shelf, items: s.items })}
                           aria-label={`${p.place}, ${s.shelf ? `clayette ${s.shelf}` : 'sans clayette'} : ${s.n} bouteilles`}
                         >
                           <span class="lbl">{s.shelf || '—'}</span>
@@ -246,7 +246,7 @@ export function Home(props: {
                   {wineName(wine)} {vintageLabel(wine)}
                 </b>
                 <br />
-                <span class="meta">{shortDate(exit.date)}</span> {exit.rating != null && <Stars n={exit.rating} />}
+                <span class="meta">{shortDate(exit.date)}</span> {exit.rating != null && <Score n={exit.rating} />}
                 {exit.comment && <p>{exit.comment}</p>}
                 <span class="pl">
                   <span class="wtag plain">{exit.reason === 'bue' ? 'De ta cave' : exit.where || 'Ailleurs'}</span>
@@ -363,10 +363,13 @@ export function Home(props: {
             {shelf.shelf ? `${shelf.place} · ${shelf.shelf}` : shelf.place}
           </h2>
           <div style="margin:0 -18px">
-            {shelf.wines.map((w) => (
+            {/* Seulement les bouteilles de cette clayette : nombre et emplacement de ce lieu, pas du vin entier. */}
+            {shelf.items.map(({ wine: w, n }) => (
               <WineRow
                 key={w.id}
                 w={w}
+                count={n}
+                sub={shelf.shelf ? `${shelf.place} · ${shelf.shelf}` : shelf.place}
                 onOpen={() => {
                   setShelf(null);
                   void sheetsSettled().then(() => onOpen(w.id));

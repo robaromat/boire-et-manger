@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
+import { PhotoAdd } from '../../components/PhotoAdd';
 import { Icon } from '../../components/Icon';
 import { Sheet, sheetsSettled } from '../../components/Sheet';
 import { showSnack } from '../../components/Snack';
@@ -14,10 +15,10 @@ import {
 } from '../../cave/ops';
 import { COLOR_LABELS, REASON_LABELS, WINE_LABEL_NAMES, isTasting, type Exit, type Reason, type Slot, type Wine } from '../../cave/types';
 import { caveEngine, mutateCave } from '../../sync/store';
-import { Cover, Stars, fmtNote, shortDate } from '../recettes/bits';
+import { Cover, shortDate } from '../recettes/bits';
 import { Viewer } from '../recettes/Page';
 import { snackWithSouvenir } from '../../souvenirs/pending';
-import { Dot, REASON_ICONS, YEAR, recipeList, recipeTitle, whereText } from './bits';
+import { Dot, REASON_ICONS, RatePicker, Score, YEAR, recipeList, recipeTitle, whereText } from './bits';
 import { WineEditor } from './WineEditor';
 
 // Fiche d'un vin (maquette validée) : étiquette, stock et « Sortir », fenêtre de dégustation, emplacements, le vin,
@@ -149,8 +150,7 @@ export function WinePage({ w, onBack, start }: { w: Wine; onBack: () => void; st
             ))}
             {avg != null && (
               <span class="statline">
-                <Stars n={avg} />
-                {fmtNote(avg)}
+                <Score n={avg} />
               </span>
             )}
           </div>
@@ -366,29 +366,37 @@ export function WinePage({ w, onBack, start }: { w: Wine; onBack: () => void; st
                 </span>
               </button>
             )}
-            <label class="opt">
-              <Icon name="camera" />
-              <span>
-                {w.label ? 'Changer la photo de l’étiquette' : 'Ajouter une photo de l’étiquette'}
-                <small>Elle remplace l’étiquette dessinée</small>
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={async (e) => {
-                  const file = e.currentTarget.files?.[0];
-                  close();
-                  if (!file) return;
-                  try {
-                    const id = await savePhoto(file);
-                    mutateCave((d) => updateWine(d, w.id, { label: id }));
-                  } catch {
-                    showSnack('Photo illisible : réessaie avec une autre.');
-                  }
-                }}
-              />
-            </label>
+            {(
+              [
+                ['camera', w.label ? 'Rephotographier l’étiquette' : 'Photographier l’étiquette', 'Elle remplace l’étiquette dessinée', true],
+                ['image', 'Étiquette depuis la galerie', 'Une photo déjà prise', false],
+              ] as const
+            ).map(([icon, title, sub, camera]) => (
+              <label class="opt" key={icon}>
+                <Icon name={icon} />
+                <span>
+                  {title}
+                  <small>{sub}</small>
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture={camera ? 'environment' : undefined}
+                  hidden
+                  onChange={async (e) => {
+                    const file = e.currentTarget.files?.[0];
+                    close();
+                    if (!file) return;
+                    try {
+                      const id = await savePhoto(file);
+                      mutateCave((d) => updateWine(d, w.id, { label: id }));
+                    } catch {
+                      showSnack('Photo illisible : réessaie avec une autre.');
+                    }
+                  }}
+                />
+              </label>
+            ))}
             <button
               class="opt"
               onClick={() => {
@@ -455,7 +463,7 @@ function HistoryEntry({ w, x, onEdit, onPhoto }: { w: Wine; x: Exit; onEdit: () 
           {shortDate(x.date)}
           {x.reason !== 'bue' ? ` · ${x.where || REASON_LABELS[x.reason].toLowerCase()}` : ''}
         </span>{' '}
-        {x.rating != null ? <Stars n={x.rating} /> : <span class="meta">· sans note</span>}
+        {x.rating != null ? <Score n={x.rating} /> : <span class="meta">· sans note</span>}
         {x.comment && <p>{x.comment}</p>}
         {(recipe || x.dish) && <span class="meta">avec {recipe ?? x.dish}</span>}
       </button>
@@ -635,13 +643,7 @@ function DrankSheet({ w, exitId, reason, onClose }: { w: Wine; exitId?: string; 
       </div>
       <div class="field">
         <label>Ta note</label>
-        <div class="rate" role="group" aria-label="Note sur 5">
-          {[1, 2, 3, 4, 5].map((k) => (
-            <button key={k} class={rating != null && k <= rating ? 'on' : ''} aria-label={`${k} sur 5`} aria-pressed={rating === k} onClick={() => setRating(rating === k ? null : k)}>
-              ★
-            </button>
-          ))}
-        </div>
+        <RatePicker value={rating} onChange={setRating} />
       </div>
       <div class="field">
         <label for="b-com">Commentaire</label>
@@ -662,11 +664,7 @@ function DrankSheet({ w, exitId, reason, onClose }: { w: Wine; exitId?: string; 
           </button>
         </div>
       ) : (
-        <label class="photo-add">
-          <Icon name="camera" />
-          {x?.photo ? 'Changer la photo' : 'Ajouter une photo'}
-          <input type="file" accept="image/*" hidden onChange={(e) => setPhoto(e.currentTarget.files?.[0] ?? null)} />
-        </label>
+        <PhotoAdd label={x?.photo ? 'Changer la photo' : 'Prendre une photo'} onFiles={(f) => setPhoto(f[0] ?? null)} />
       )}
       <button class="btn primary block" disabled={busy} onClick={() => void save()}>
         Enregistrer la dégustation
