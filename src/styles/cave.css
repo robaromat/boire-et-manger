@@ -184,3 +184,11 @@
 .rate10 button { height: 42px; border-radius: 12px; border: 1.5px solid var(--line); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
 .rate10 button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 .rate10 button:disabled { opacity: 0.4; }
+/* Saisie à la main : vins déjà eus (et ChatGPT) sous le domaine */
+.known { display: grid; margin-top: 6px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card); }
+.known-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-align: left; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.known-row:last-child { border-bottom: 0; }
+.known-row .t { display: grid; gap: 1px; min-width: 0; }
+.known-row b { font-weight: 600; }
+.known-row.ai { color: var(--accent); }
+.known-row.ai .meta { color: var(--muted); }

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'preact/hooks';
 import { Icon } from '../../components/Icon';
 import { Sheet } from '../../components/Sheet';
-import { placeOptions, shelfOptions, type WineDraft } from '../../cave/ops';
+import { knownWines, placeOptions, shelfOptions, type WineDraft } from '../../cave/ops';
 import { COLORS, COLOR_LABELS, WINE_LABELS, WINE_LABEL_NAMES, type CaveFile, type Estimable, type WineColor, type WineLabel } from '../../cave/types';
 import { Dot, recipeList } from './bits';
 
@@ -33,6 +33,10 @@ export function WineEditor(props: {
   kind?: WineKind;
   why?: string;
   title?: string;
+  /** Saisie à la main : un vin déjà eu, choisi dans les suggestions, remplit la fiche. */
+  onPickKnown?: (draft: WineDraft) => void;
+  /** Saisie à la main : ChatGPT remplit la fiche d'après le nom tapé. */
+  onLookup?: (q: string) => void;
   onClose: () => void;
   onSave: (r: WineEditorResult) => void;
 }) {
@@ -196,7 +200,32 @@ export function WineEditor(props: {
       )}
       <div class="field">
         <label for="v-dom">Domaine ou château</label>
-        <input id="v-dom" class="input" value={f.domaine} placeholder="ex. Domaine Lapierre" onInput={set('domaine')} />
+        <input id="v-dom" class="input" value={f.domaine} placeholder="ex. Domaine Lapierre" autoComplete="off" onInput={set('domaine')} />
+        {(props.onPickKnown || props.onLookup) && f.domaine !== i.domaine && f.domaine.trim().length >= 2 && (
+          <div class="known" role="list" aria-label="Vins correspondants">
+            {props.onPickKnown &&
+              knownWines(props.data, f.domaine).map(({ draft, vintages }) => (
+                <button key={`${draft.domaine}|${draft.cuvee}`} class="known-row" role="listitem" onClick={() => props.onPickKnown!(draft)}>
+                  <Dot color={draft.color} />
+                  <span class="t">
+                    <b>{[draft.domaine, draft.cuvee].filter(Boolean).join(' · ')}</b>
+                    <span class="meta">
+                      {[draft.appellation, vintages.length ? `déjà eu : ${vintages.slice(0, 4).join(', ')}${vintages.length > 4 ? '…' : ''}` : ''].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            {props.onLookup && (
+              <button class="known-row ai" role="listitem" onClick={() => props.onLookup!(f.domaine.trim())}>
+                <Icon name="sparkle" />
+                <span class="t">
+                  <b>Chercher « {f.domaine.trim()} » avec ChatGPT</b>
+                  <span class="meta">Remplit appellation, région, couleur, cépages, accords</span>
+                </span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
       <div class="fgrid2">
         <div class="field">

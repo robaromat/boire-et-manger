@@ -376,3 +376,48 @@ export function filterChoices(wines: Wine[]): { regions: [string, number][]; app
     })(),
   };
 }
+
+export interface KnownWine {
+  /** Fiche reprise d'un vin déjà eu : domaine, cuvée, appellation, région, couleur, cépages, accords… sans millésime. */
+  draft: WineDraft;
+  vintages: number[];
+}
+
+/** Vins déjà dans le carnet qui correspondent à ce qu'on tape (domaine, cuvée ou appellation), un par cuvée. */
+export function knownWines(d: CaveFile, q: string, limit = 6): KnownWine[] {
+  const words = norm(q).split(' ').filter(Boolean);
+  if (norm(q).replace(/ /g, '').length < 2) return [];
+  const m = new Map<string, { w: Wine; vintages: Set<number> }>();
+  for (const w of d.wines) {
+    const hay = norm([w.domaine, w.cuvee, w.appellation].join(' '));
+    if (!words.every((x) => hay.includes(x))) continue;
+    const k = `${norm(w.domaine)}|${norm(w.cuvee)}`;
+    const cur = m.get(k) ?? { w, vintages: new Set<number>() };
+    if (w.vintage) cur.vintages.add(w.vintage);
+    if (w.updatedAt > cur.w.updatedAt) cur.w = w;
+    m.set(k, cur);
+  }
+  const starts = (w: Wine) => (norm(w.domaine).startsWith(words[0] ?? '') ? 0 : 1);
+  return [...m.values()]
+    .sort((a, b) => starts(a.w) - starts(b.w) || a.w.domaine.localeCompare(b.w.domaine, 'fr') || a.w.cuvee.localeCompare(b.w.cuvee, 'fr'))
+    .slice(0, limit)
+    .map(({ w, vintages }) => ({
+      draft: {
+        ...emptyWineDraft(),
+        domaine: w.domaine,
+        cuvee: w.cuvee,
+        color: w.color,
+        appellation: w.appellation,
+        region: w.region,
+        country: w.country,
+        grapes: w.grapes,
+        style: w.style,
+        pairings: [...w.pairings],
+        pairRecipes: [...w.pairRecipes],
+        labels: [...(w.labels ?? [])],
+        // La fenêtre dépend du millésime : elle n'est pas reprise.
+        estimated: w.estimated.filter((e) => e !== 'window'),
+      },
+      vintages: [...vintages].sort((a, b) => b - a),
+    }));
+}

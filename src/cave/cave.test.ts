@@ -5,7 +5,7 @@ import { csvRecords, decodeText, parseCsv } from './csv';
 import { draftFromLabel, type LabelRead } from './label';
 import { mergeCave } from './merge';
 import {
-  addStock, addWine, bottles, cellarPlan, setStock, placeOptions, setPlaces, shelfOptions, renamePlace, bottlesIn, passFilter, filterChoices, onlyPlace, NO_FILTER, drinkGroups, emptyWineDraft, findSame, matchWine, removeExit, takeBottle, tastings, wineName,
+  addStock, addWine, bottles, knownWines, cellarPlan, setStock, placeOptions, setPlaces, shelfOptions, renamePlace, bottlesIn, passFilter, filterChoices, onlyPlace, NO_FILTER, drinkGroups, emptyWineDraft, findSame, matchWine, removeExit, takeBottle, tastings, wineName,
   type WineDraft,
 } from './ops';
 import { DEFAULT_PLACES, emptyCaveFile, parseCaveFile, type CaveFile } from './types';
@@ -501,5 +501,20 @@ describe('cave : filtre par note', () => {
     expect(passFilter(w, { ...NO_FILTER, minRating: 8 })).toBe(false);
     expect(passFilter(w, { ...NO_FILTER, minRating: 8 }, undefined, 8)).toBe(true);
     expect(passFilter({ ...w, history: [] }, { ...NO_FILTER, minRating: 5 })).toBe(false);
+  });
+});
+
+describe('cave : vins déjà eus (saisie à la main)', () => {
+  it('retrouve un domaine sans accents ni majuscules, une ligne par cuvée, sans millésime', () => {
+    let d = emptyCaveFile();
+    d = addWine(d, { ...emptyWineDraft(), domaine: 'Château Labégorce', appellation: 'Margaux', vintage: 2012, from: 2019, to: 2030, grapes: 'Merlot' }, []).data;
+    d = addWine(d, { ...emptyWineDraft(), domaine: 'Château Labégorce', appellation: 'Margaux', vintage: 2015 }, []).data;
+    d = addWine(d, { ...emptyWineDraft(), domaine: 'Domaine Lapierre', cuvee: 'Morgon', color: 'rouge' }, []).data;
+    const r = knownWines(d, 'labeg');
+    expect(r).toHaveLength(1);
+    expect(r[0]!.draft).toMatchObject({ domaine: 'Château Labégorce', appellation: 'Margaux', vintage: null, from: null, to: null });
+    expect(r[0]!.vintages).toEqual([2015, 2012]);
+    expect(knownWines(d, 'morgon')[0]!.draft.domaine).toBe('Domaine Lapierre');
+    expect(knownWines(d, 'l')).toEqual([]);
   });
 });

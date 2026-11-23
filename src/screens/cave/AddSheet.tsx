@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Icon } from '../../components/Icon';
 import { Sheet } from '../../components/Sheet';
+import { showSnack } from '../../components/Snack';
 import { imageToDataUrl } from '../../recipe/image';
 import { RecipeError } from '../../recipe/read';
 import { navigate } from '../../router';
@@ -19,8 +20,8 @@ export interface AddWineResult extends WineEditorResult {
 
 type Phase =
   | { kind: 'pick'; error?: string }
-  | { kind: 'loading'; preview: string }
-  | { kind: 'edit'; draft: WineDraft; mode: 'read' | 'manual'; labelFile: File | null };
+  | { kind: 'loading'; preview?: string; text?: string }
+  | { kind: 'edit'; draft: WineDraft; mode: 'read' | 'manual'; labelFile: File | null; n?: number };
 
 export function AddSheet(props: {
   data: CaveFile;
@@ -53,10 +54,30 @@ export function AddSheet(props: {
     }
   };
 
+  // Saisie à la main : le domaine tapé est cherché par ChatGPT, qui remplit la fiche comme pour une étiquette.
+  const lookup = async (q: string) => {
+    setPhase({ kind: 'loading', text: q });
+    const ctrl = new AbortController();
+    abort.current = ctrl;
+    try {
+      const recipes = recipeList();
+      const r = await readLabel(key, { text: q }, recipes, { signal: ctrl.signal });
+      if (!ctrl.signal.aborted) setPhase({ kind: 'edit', mode: 'read', labelFile: null, draft: draftFromLabel(r, recipes) });
+    } catch (e) {
+      if (!ctrl.signal.aborted)
+        setPhase({ kind: 'edit', mode: 'manual', labelFile: null, draft: { ...emptyWineDraft(), domaine: q } });
+      if (!ctrl.signal.aborted) showSnack(e instanceof RecipeError ? e.message : 'Recherche impossible : ' + String(e));
+    }
+  };
+
   if (phase.kind === 'edit') {
     const labelFile = phase.labelFile;
+    const manualNew = phase.mode === 'manual' && !props.prefill;
     return (
       <WineEditor
+        key={phase.n ?? 0}
+        onPickKnown={manualNew ? (draft) => setPhase({ kind: 'edit', mode: 'manual', labelFile: null, draft, n: (phase.n ?? 0) + 1 }) : undefined}
+        onLookup={manualNew && key ? (q) => void lookup(q) : undefined}
         data={props.data}
         initial={phase.draft}
         mode={phase.mode}
@@ -72,10 +93,10 @@ export function AddSheet(props: {
     return (
       <Sheet onClose={props.onClose} label="Lecture de l’étiquette" full>
         <div class="loading" role="status">
-          <img src={phase.preview} alt="Photo de l’étiquette" />
+          {phase.preview && <img src={phase.preview} alt="Photo de l’étiquette" />}
           <div class="spinner" aria-hidden="true" />
           <div>
-            <b>ChatGPT lit l’étiquette…</b>
+            <b>{phase.text ? `ChatGPT cherche « ${phase.text} »…` : 'ChatGPT lit l’étiquette…'}</b>
             <p class="note">Domaine, cuvée, millésime, appellation, puis une estimation de la fenêtre de dégustation et des accords.</p>
           </div>
           <button
